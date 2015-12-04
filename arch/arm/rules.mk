@@ -16,9 +16,8 @@ HANDLED_CORE := false
 ifeq ($(ARM_CPU),cortex-m0)
 GLOBAL_DEFINES += \
 	ARM_CPU_CORTEX_M0=1 \
-	ARM_ISA_ARMv7=0 \
-	ARM_ISA_ARMv7M=0 \
-	ARM_WITH_THUMB=1 \
+	ARM_ISA_ARMV6=1 \
+	ARM_ISA_ARMV6M=1 \
 	ARM_WITH_THUMB2=1
 HANDLED_CORE := true
 ENABLE_THUMB := true
@@ -180,7 +179,7 @@ endif
 THUMBCFLAGS :=
 THUMBINTERWORK :=
 ifeq ($(ENABLE_THUMB),true)
-THUMBCFLAGS := -mthumb -D__thumb__
+THUMBCFLAGS := -mthumb -D__thumb2__
 THUMBINTERWORK := -mthumb-interwork
 endif
 

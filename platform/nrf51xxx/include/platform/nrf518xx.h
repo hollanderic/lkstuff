@@ -55,7 +55,7 @@
 #ifndef NRF51_H
 #define NRF51_H
 
-#include <nrf518xx_bitfields.h>
+#include <platform/nrf518xx_bitfields.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -78,8 +78,8 @@ typedef enum {
   RADIO_IRQn                    =   1,              /*!<   1  RADIO                                                            */
   UART0_IRQn                    =   2,              /*!<   2  UART0                                                            */
   SPI0_TWI0_IRQn                =   3,              /*!<   3  SPI0_TWI0                                                        */
-  SPI1_TWI1_IRQn                =   4,              /*!<   4  SPI1_TWI1                                                        */
-  RESERVED_IRQn                 =   5,
+  SPI1_TWI1_IRQn                =   4,              /*!<   4  SPI1_TWI1  							*/	
+  RESERVED_IRQn			=   5,                                                      
   GPIOTE_IRQn                   =   6,              /*!<   6  GPIOTE                                                           */
   ADC_IRQn                      =   7,              /*!<   7  ADC                                                              */
   TIMER0_IRQn                   =   8,              /*!<   8  TIMER0                                                           */
