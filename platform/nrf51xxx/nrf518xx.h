@@ -55,7 +55,7 @@
 #ifndef NRF51_H
 #define NRF51_H
 
-#include <platform/nrf518xx_bitfields.h>
+#include <nrf518xx_bitfields.h>
 
 #ifdef __cplusplus
 extern "C" {

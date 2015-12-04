@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 Travis Geiselbrecht
+ * Copyright (c) 2012 Travis Geiselbrecht
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files
@@ -22,21 +22,32 @@
  */
 #include <err.h>
 #include <debug.h>
-#include <dev/uart.h>
-#include <platform.h>
+#include <target.h>
+#include <compiler.h>
+#include <dev/gpio.h>
+#include <platform/gpio.h>
 #include <platform/nrf51.h>
-#include <arch/arm/cm.h>
-#include <system_nrf51.h>
+#include <target/gpioconfig.h>
 
-void platform_early_init(void)
+void target_early_init(void)
 {
-	// Crank up the clock before initing timers.
-	SystemInit();
-
-	// start the systick timer
-	arm_cm_systick_init(SystemCoreClock);
+	/* configure the usart1 pins */
+	gpio_config(GPIO_LED1, GPIO_OUTPUT);
+    gpio_config(GPIO_LED2, GPIO_OUTPUT);
+    gpio_config(GPIO_LED3, GPIO_OUTPUT);
+    gpio_config(GPIO_LED4, GPIO_OUTPUT);
+	
+	gpio_set(GPIO_LED1,1);
+	gpio_set(GPIO_LED2,1);
+	gpio_set(GPIO_LED3,0);
+	gpio_set(GPIO_LED4,0);
+	
+	
+	nrf51_debug_early_init();
 }
 
-void platform_init(void)
+
+void target_init(void)
 {
+	nrf51_debug_init();
 }

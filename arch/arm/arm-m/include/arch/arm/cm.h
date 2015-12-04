@@ -31,7 +31,9 @@
 #include <sys/types.h>
 #include <platform/platform_cm.h>
 
-#if ARM_CPU_CORTEX_M3
+#if ARM_CPU_CORTEX_M0
+#include <core_cm0.h>
+#elif ARM_CPU_CORTEX_M3
 #include <core_cm3.h>
 #elif ARM_CPU_CORTEX_M4
 #include <core_cm4.h>

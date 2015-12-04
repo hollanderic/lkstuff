@@ -31,6 +31,20 @@
 #include <target/debugconfig.h>
 #include <arch/arm/cm.h>
 
+
+void nrf51_debug_early_init(void)
+{
+	uart_init_early();
+}
+
+/* later in the init process */
+void nrf51_debug_init(void)
+{
+	uart_init();
+}
+
+
+
 void platform_dputc(char c)
 {
 	if (c == '\n')

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 Travis Geiselbrecht
+ * Copyright (c) 2012 Travis Geiselbrecht
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files
@@ -20,23 +20,9 @@
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-#include <err.h>
-#include <debug.h>
-#include <dev/uart.h>
-#include <platform.h>
-#include <platform/nrf51.h>
-#include <arch/arm/cm.h>
-#include <system_nrf51.h>
+#ifndef __TARGET_DEBUGCONFIG_H
+#define __TARGET_DEBUGCONFIG_H
 
-void platform_early_init(void)
-{
-	// Crank up the clock before initing timers.
-	SystemInit();
+#define DEBUG_UART 1
 
-	// start the systick timer
-	arm_cm_systick_init(SystemCoreClock);
-}
-
-void platform_init(void)
-{
-}
+#endif
