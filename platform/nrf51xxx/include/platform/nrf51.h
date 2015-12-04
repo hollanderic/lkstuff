@@ -23,7 +23,7 @@
 #ifndef __PLATFORM_NRF51_H
 #define __PLATFORM_NRF51_H
 
-#include <platform/nrf518xx.h>
+#include <nrf518xx.h>
 
 void nrf51_debug_early_init(void);
 void nrf51_debug_init(void);

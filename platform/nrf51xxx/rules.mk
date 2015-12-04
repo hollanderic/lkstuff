@@ -8,7 +8,7 @@ MEMBASE := 0x20000000
 # can be overridden by target
 
 ARCH := arm
-ARM_CPU := cortex-m3
+ARM_CPU := cortex-m0
 
 ifeq ($(NRF51_CHIP),nrf51822-qfaa)
 GLOBAL_DEFINES +=
@@ -35,11 +35,13 @@ GLOBAL_DEFINES +=
 MEMSIZE ?= 32768
 endif
 
+GLOBAL_INCLUDES += $(LOCAL_DIR)
+
 GLOBAL_DEFINES += \
 	MEMSIZE=$(MEMSIZE)
 
 MODULE_SRCS += \
-#	$(LOCAL_DIR)/init.c \
+	$(LOCAL_DIR)/init.c \
 	$(LOCAL_DIR)/debug.c \
 	$(LOCAL_DIR)/uart.c \
 	$(LOCAL_DIR)/vectab.c \
