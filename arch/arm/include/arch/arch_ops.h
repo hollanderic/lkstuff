@@ -23,15 +23,13 @@
 #pragma once
 
 #ifndef ASSEMBLY
-
 #include <stdbool.h>
 #include <compiler.h>
 #include <reg.h>
 #include <arch/arm.h>
-
 __BEGIN_CDECLS;
 
-#if ARM_ISA_ARMV7 || (ARM_ISA_ARMV6 && !__thumb__)
+#if ARM_ISA_ARMV7 || (ARM_ISA_ARMV6 )
 #define USE_GCC_ATOMICS 0
 #define ENABLE_CYCLE_COUNTER 1
 

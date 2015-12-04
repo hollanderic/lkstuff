@@ -62,7 +62,7 @@ void uart_init_early(void)
 void uart_init(void)
 {
 #ifdef ENABLE_UART0
-    cbuf_initialize(uart1_rx_buf, RXBUF_SIZE);
+    cbuf_initialize(&uart0_rx_buf, RXBUF_SIZE);
     NRF_UART0->INTENSET =   UART_INTENSET_TXDRDY_Enabled << UART_INTENSET_TXDRDY_Pos |\
                             UART_INTENSET_RXDRDY_Enabled << UART_INTENSET_RXDRDY_Pos;
     NVIC_EnableIRQ(UART0_IRQn);
@@ -75,11 +75,11 @@ void nrf51_UART0_IRQ(void)
 
 	bool resched = false;
 	while ( NRF_UART0->EVENTS_RXDRDY > 0 ) {
-		if (!cbuf_space_avail(rxbuf)) {
+		if (!cbuf_space_avail(&uart0_rx_buf)) {
 			break;
 		}
-		char c = NRF_UART_0->RXD;
-		cbuf_write_char(rxbuf, c, false);
+		char c = NRF_UART0->RXD;
+		cbuf_write_char(&uart0_rx_buf, c, false);
 		resched = true;
 	}
 	arm_cm_irq_exit(resched);	
@@ -95,7 +95,7 @@ int uart_putc(int port, char c)
 int uart_getc(int port, bool wait)
 {
 	char c;
-	cbuf_read_char(rxbuf, &c, wait);
+	cbuf_read_char(&uart0_rx_buf, &c, wait);
 	return c;
 }
 

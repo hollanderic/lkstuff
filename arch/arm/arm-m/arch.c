@@ -38,10 +38,11 @@ unsigned int arm_cm_irq_pri_mask;
 
 void arch_early_init(void)
 {
-    uint i;
 
     arch_disable_ints();
+#if     (__CORTEX_M >= 0x03) || (CORTEX_SC >= 300)
 
+    uint i;
     /* set the vector table base */
     SCB->VTOR = (uint32_t)&vectab;
 
@@ -86,6 +87,7 @@ void arch_early_init(void)
 #if ARM_WITH_CACHE
     arch_enable_cache(UCACHE);
 #endif
+#endif
 }
 
 void arch_init(void)
@@ -108,6 +110,7 @@ void arch_idle(void)
 
 void _arm_cm_set_irqpri(uint32_t pri)
 {
+#if     (__CORTEX_M >= 0x03) || (CORTEX_SC >= 300)
     if (pri == 0) {
         __disable_irq(); // cpsid i
         __set_BASEPRI(0);
@@ -123,6 +126,7 @@ void _arm_cm_set_irqpri(uint32_t pri)
             __set_BASEPRI(_pri);
         __enable_irq(); // cpsie i
     }
+#endif
 }
 
 void arm_cm_irq_entry(void)
@@ -139,12 +143,15 @@ void arm_cm_irq_entry(void)
 
 void arm_cm_irq_exit(bool reschedule)
 {
+
+#if     (__CORTEX_M >= 0x03) || (CORTEX_SC >= 300)
     if (reschedule)
         arm_cm_trigger_preempt();
 
     KEVLOG_IRQ_EXIT(__get_IPSR());
 
     __enable_irq(); // clear PRIMASK
+#endif
 }
 
 void arch_chain_load(void *entry, ulong arg0, ulong arg1, ulong arg2, ulong arg3)

@@ -52,7 +52,7 @@ endif
 
 ifeq ($(ARM_CPU),cortex-m0)
 ARCH_arm_COMPILEFLAGS += -mcpu=$(ARM_CPU)
-ARCH_arm_COMPILEFLAGS += -mthumb -mabi=aapcs -mfloat-abi=soft
+ARCH_arm_COMPILEFLAGS += -mthumb -mfloat-abi=soft
 endif
 ifeq ($(ARM_CPU),cortex-m3)
 ARCH_arm_COMPILEFLAGS += -mcpu=$(ARM_CPU)

@@ -24,6 +24,6 @@
 #ifndef __PLATFORM_NRF51_GPIO_H
 #define __PLATFORM_NRF51_GPIO_H
 
-#define NRF51_MAX_PIN_NUMBER 31
+#define NRF_MAX_PIN_NUMBER 31
 
 #endif
