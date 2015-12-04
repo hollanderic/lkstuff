@@ -24,10 +24,9 @@
 #include <debug.h>
 #include <dev/uart.h>
 #include <platform.h>
-#include <platform/stm32.h>
+#include <platform/nrf51.h>
 #include <arch/arm/cm.h>
-#include <stm32f10x_rcc.h>
-#include "system_stm32f10x.h"
+#include "system_nrf51.h"
 
 void platform_early_init(void)
 {
@@ -39,13 +38,8 @@ void platform_early_init(void)
 	RCC_GetClocksFreq(&clocks);
 	arm_cm_systick_init(clocks.SYSCLK_Frequency);
 
-	stm32_timer_early_init();
-	stm32_gpio_early_init();
-	stm32_flash_nor_early_init();
 }
 
 void platform_init(void)
 {
-	stm32_timer_init();
-	stm32_flash_nor_init();
 }
