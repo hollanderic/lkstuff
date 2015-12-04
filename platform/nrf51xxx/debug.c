@@ -29,20 +29,7 @@
 #include <arch/ops.h>
 #include <dev/uart.h>
 #include <target/debugconfig.h>
-#include <stm32f10x_rcc.h>
-#include <stm32f10x_usart.h>
 #include <arch/arm/cm.h>
-
-void stm32_debug_early_init(void)
-{
-	uart_init_early();
-}
-
-/* later in the init process */
-void stm32_debug_init(void)
-{
-	uart_init();
-}
 
 void platform_dputc(char c)
 {
