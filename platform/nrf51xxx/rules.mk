@@ -47,6 +47,7 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/system_nrf51.h
 
 
+
 LINKER_SCRIPT += \
 	$(BUILDDIR)/system-twosegment.ld
 
