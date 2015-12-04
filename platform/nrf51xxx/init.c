@@ -34,10 +34,7 @@ void platform_early_init(void)
 	SystemInit();
 
 	// start the systick timer
-	RCC_ClocksTypeDef clocks;
-	RCC_GetClocksFreq(&clocks);
-	arm_cm_systick_init(clocks.SYSCLK_Frequency);
-
+	arm_cm_systick_init(SystemCoreClock);
 }
 
 void platform_init(void)

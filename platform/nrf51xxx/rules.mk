@@ -40,8 +40,8 @@ GLOBAL_DEFINES += \
 
 MODULE_SRCS += \
 #	$(LOCAL_DIR)/init.c \
-#	$(LOCAL_DIR)/debug.c \
-#	$(LOCAL_DIR)/uart.c \
+	$(LOCAL_DIR)/debug.c \
+	$(LOCAL_DIR)/uart.c \
 	$(LOCAL_DIR)/vectab.c \
 	$(LOCAL_DIR)/gpio.c \
 	$(LOCAL_DIR)/system_nrf51.h
