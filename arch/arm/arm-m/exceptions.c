@@ -80,7 +80,6 @@ static void memmanage(struct arm_cm_exception_frame *frame)
     platform_halt(HALT_ACTION_HALT, HALT_REASON_SW_PANIC);
 }
 
-
 static void usagefault(struct arm_cm_exception_frame *frame)
 {
     printf("usagefault: ");
