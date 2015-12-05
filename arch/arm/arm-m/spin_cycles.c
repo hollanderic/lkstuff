@@ -31,8 +31,9 @@ void spin_cycles(uint32_t cycles)
          * 4 instructions, plus the call into and return from the function.
          * Then, add 3 then >> 2 to round up to the number of loop iterations.
          */
-        "subs r1, %[cycles], #5\n"
-        "asrs r1, r1, #2\n"
+        "sub r1, %[cycles], #5\n"
+        "asr r1, r1, #2\n"
+        "cmp r1, #0\n"
         "ble .Ldone\n"
 
         /* Padding to stay aligned on an 8 byte boundary, also has the added
@@ -48,8 +49,8 @@ void spin_cycles(uint32_t cycles)
          * branch is 2 cycles
          */
         ".Lloop:\n"
-        "subs r1, r1, #1\n"
-        "nop\n"
+        "sub r1, r1, #1\n"
+        "cmp r1,#0\n"
         "bne .Lloop\n"
 
         ".Ldone:\n"
