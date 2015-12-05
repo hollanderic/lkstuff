@@ -103,19 +103,15 @@ void _nmi(void)
     printf("nmi\n");
     platform_halt(HALT_ACTION_HALT, HALT_REASON_SW_PANIC);
 }
+#if     (__CORTEX_M >= 0X03) || (__CORTEX_SC >= 300)
 
 __NAKED void _hardfault(void)
 {
     __asm__ volatile(
-        "push	{r4-r7};"
-        "mov   r4, r8;"
-        "mov   r5, r9;"
-        "mov   r6, r10;"
-        "mov   r7, r11;"
-        "push   {r4-r7};"
+        "push	{r4-r11};"
         "mov	r0, sp;"
         "b		%0;"
-        :: "s"(hardfault)
+        :: "i" (hardfault)
     );
     __UNREACHABLE;
 }
@@ -152,7 +148,68 @@ void _usagefault(void)
     );
     __UNREACHABLE;
 }
+#else
 
+__NAKED void _hardfault(void)
+{
+    __asm__ volatile(
+        "push	{r4-r7};"
+        "mov   r4, r8;"
+        "mov   r5, r9;"
+        "mov   r6, r10;"
+        "mov   r7, r11;"
+        "push   {r4-r7};"
+        "mov	r0, sp;"
+        "b		=hardfault;"
+    );
+    __UNREACHABLE;
+}
+
+void _memmanage(void)
+{
+    __asm__ volatile(
+        "push	{r4-r7};"
+        "mov   r4, r8;"
+        "mov   r5, r9;"
+        "mov   r6, r10;"
+        "mov   r7, r11;"
+        "push   {r4-r7};"
+        "mov	r0, sp;"
+        "b		=memmanage;"
+    );
+    __UNREACHABLE;
+}
+
+void _busfault(void)
+{
+    __asm__ volatile(
+        "push	{r4-r7};"
+        "mov   r4, r8;"
+        "mov   r5, r9;"
+        "mov   r6, r10;"
+        "mov   r7, r11;"
+        "push   {r4-r7};"        
+        "mov	r0, sp;"
+        "b		=busfault;"
+    );
+    __UNREACHABLE;
+}
+
+void _usagefault(void)
+{
+    __asm__ volatile(
+        "push	{r4-r7};"
+        "mov   r4, r8;"
+        "mov   r5, r9;"
+        "mov   r6, r10;"
+        "mov   r7, r11;"
+        "push   {r4-r7};"
+        "mov	r0, sp;"
+        "b		=usagefault;"
+    );
+    __UNREACHABLE;
+}
+#endif
 /* systick handler */
 void __WEAK _systick(void)
 {

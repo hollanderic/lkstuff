@@ -112,12 +112,23 @@ static void pendsv(struct arm_cm_exception_frame_long *frame)
 __NAKED void _pendsv(void)
 {
     __asm__ volatile(
-        "push	{ r4-r11, lr };"
+        "push   { r4-r7, lr };"
+        "mov    r4, r8;"
+        "mov    r5, r9;"
+        "mov    r6, r10;"
+        "mov    r7, r11;"
+        "push   { r4-r7 };"
         "mov	r0, sp;"
-        "bl		%0;"
-        "pop	{ r4-r11, lr };"
+        "bl		=pendsv;"
+        "pop    { r4-r7 };"
+        "mov    r8, r4;"
+        "mov    r9, r5;"
+        "mov    r10, r6;"
+        "mov    r11, r7;" 
+        "pop    {r4};"
+        "mov    lr, r4;"               
+        "pop	{ r4-r7 };"    
         "bx		lr;"
-        :: "i" (pendsv)
     );
     __UNREACHABLE;
 }
@@ -131,7 +142,14 @@ __NAKED void _svc(void)
     __asm__ volatile(
         /* load the pointer to the original exception frame we want to restore */
         "mov	sp, r4;"
-        "pop	{ r4-r11, lr };"
+        "pop    { r4-r7 };"
+        "mov    r8, r4;"
+        "mov    r9, r5;"
+        "mov    r10, r6;"
+        "mov    r11, r7;" 
+        "pop    {r4};"
+        "mov    lr, r4;"               
+        "pop	{ r4-r7 };"    
         "bx		lr;"
     );
 }
@@ -139,7 +157,12 @@ __NAKED void _svc(void)
 __NAKED static void _half_save_and_svc(vaddr_t *fromsp, vaddr_t tosp)
 {
     __asm__ volatile(
-        "push	{ r4-r11, lr };"
+        "push   { r4-r7, lr };"
+        "mov    r4, r8;"
+        "mov    r5, r9;"
+        "mov    r6, r10;"
+        "mov    r7, r11;"
+        "push   { r4-r7 };"
         "str	sp, [r0];"
 
         /* make sure we load the destination sp here before we reenable interrupts */
@@ -157,11 +180,28 @@ __NAKED static void _half_save_and_svc(vaddr_t *fromsp, vaddr_t tosp)
 __NAKED static void _arch_non_preempt_context_switch(vaddr_t *fromsp, vaddr_t tosp)
 {
     __asm__ volatile(
-        "push	{ r4-r11, lr };"
-        "str	sp, [r0];"
+        "push   { r4-r7, lr };"
+        "mov    r4, r8;"
+        "mov    r5, r9;"
+        "mov    r6, r10;"
+        "mov    r7, r11;"
+        "push   { r4-r7 };"
 
+
+
+        "str	sp, [r0];"
         "mov	sp, r1;"
-        "pop	{ r4-r11, lr };"
+
+        "pop    { r4-r7 };"
+        "mov    r8, r4;"
+        "mov    r9, r5;"
+        "mov    r10, r6;"
+        "mov    r11, r7;" 
+        "pop    {r4};"
+        "mov    lr, r4;"               
+        "pop	{ r4-r7 };"    
+
+
         "clrex;"
         "bx		lr;"
     );
@@ -170,7 +210,15 @@ __NAKED static void _arch_non_preempt_context_switch(vaddr_t *fromsp, vaddr_t to
 __NAKED static void _thread_mode_bounce(void)
 {
     __asm__ volatile(
-        "pop	{ r4-r11, lr };"
+        "pop    { r4-r7 };"
+        "mov    r8, r4;"
+        "mov    r9, r5;"
+        "mov    r10, r6;"
+        "mov    r11, r7;" 
+        "pop    {r4};"
+        "mov    lr, r4;"               
+        "pop	{ r4-r7 };"    
+
         "bx		lr;"
     );
     __UNREACHABLE;
@@ -199,7 +247,14 @@ void arch_context_switch(struct thread *oldthread, struct thread *newthread)
             __asm__ volatile(
                 "mov	sp, %0;"
                 "cpsie	i;"
-                "pop	{ r4-r11, lr };"
+                "pop    { r4-r7 };"
+                "mov    r8, r4;"
+                "mov    r9, r5;"
+                "mov    r10, r6;"
+                "mov    r11, r7;" 
+                "pop    {r4};"
+                "mov    lr, r4;"               
+                "pop	{ r4-r7 };"    
                 "clrex;"
                 "bx		lr;"
                 :: "r"(newthread->arch.sp)
