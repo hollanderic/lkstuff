@@ -112,23 +112,22 @@ static void pendsv(struct arm_cm_exception_frame_long *frame)
 __NAKED void _pendsv(void)
 {
     __asm__ volatile(
-        "push   { r4-r7, lr };"
-        "mov    r4, r8;"
-        "mov    r5, r9;"
-        "mov    r6, r10;"
-        "mov    r7, r11;"
+        "push   { lr };"
+        "mov    r0, r8;"
+        "mov    r1, r9;"
+        "mov    r2, r10;"
+        "mov    r3, r11;"
+        "push   { r0-r3 };"
         "push   { r4-r7 };"
         "mov	r0, sp;"
         "bl		=pendsv;"
         "pop    { r4-r7 };"
-        "mov    r8, r4;"
-        "mov    r9, r5;"
-        "mov    r10, r6;"
-        "mov    r11, r7;" 
-        "pop    {r4};"
-        "mov    lr, r4;"               
-        "pop	{ r4-r7 };"    
-        "bx		lr;"
+        "pop    { r0-r3 };"
+        "mov    r8 , r0;"
+        "mov    r9 , r1;"
+        "mov    r10, r2;"
+        "mov    r11, r3;" 
+        "pop    { pc };"
     );
     __UNREACHABLE;
 }
@@ -136,6 +135,7 @@ __NAKED void _pendsv(void)
 /*
  * svc handler, used to hard switch the cpu into exception mode to return
  * to preempted thread.
+ *      Input - R4 contains sp for the thread we are switching to.
  */
 __NAKED void _svc(void)
 {
@@ -143,36 +143,35 @@ __NAKED void _svc(void)
         /* load the pointer to the original exception frame we want to restore */
         "mov	sp, r4;"
         "pop    { r4-r7 };"
-        "mov    r8, r4;"
-        "mov    r9, r5;"
-        "mov    r10, r6;"
-        "mov    r11, r7;" 
-        "pop    {r4};"
-        "mov    lr, r4;"               
-        "pop	{ r4-r7 };"    
-        "bx		lr;"
+        "pop    { r0-r3 };"
+        "mov    r8 , r0;"
+        "mov    r9 , r1;"
+        "mov    r10, r2;"
+        "mov    r11, r3;" 
+        "pop	{ pc };"    
     );
 }
 
 __NAKED static void _half_save_and_svc(vaddr_t *fromsp, vaddr_t tosp)
 {
     __asm__ volatile(
-        "push   { r4-r7, lr };"
-        "mov    r4, r8;"
-        "mov    r5, r9;"
-        "mov    r6, r10;"
-        "mov    r7, r11;"
+        "push   { lr };"
+        "mov    r2, r8;"
+        "mov    r3, r9;"
+        "push   { r2-r3 };"
+        "mov    r2, r10;"
+        "mov    r3, r11;"
+        "push   { r2-r3 };"
         "push   { r4-r7 };"
-        "str	sp, [r0];"
+        
+        "mov    r3, sp;"
+        "str	r3, [r0];"
 
         /* make sure we load the destination sp here before we reenable interrupts */
-        "mov	sp, r1;"
-
-        "clrex;"
-        "cpsie 	i;"
-
-        "mov	r4, r1;"
-        "svc #0;" /* make a svc call to get us into handler mode */
+        "mov	sp, r1;"    /* Seems like a double tap here, sp gets loaded with same */    
+        "cpsie 	i;"         /*   thing twice? */
+        "mov	r4, r1;"    /* supervisor call assumes new threads sp is in r4 */
+        "svc #0;"           /* make a svc call to get us into handler mode */
     );
 }
 
@@ -180,30 +179,26 @@ __NAKED static void _half_save_and_svc(vaddr_t *fromsp, vaddr_t tosp)
 __NAKED static void _arch_non_preempt_context_switch(vaddr_t *fromsp, vaddr_t tosp)
 {
     __asm__ volatile(
-        "push   { r4-r7, lr };"
-        "mov    r4, r8;"
-        "mov    r5, r9;"
-        "mov    r6, r10;"
-        "mov    r7, r11;"
+        "push   { lr };"
+        "mov    r2, r8;"
+        "mov    r3, r9;"
+        "push   { r2-r3 };"
+        "mov    r2, r10;"
+        "mov    r3, r11;"
+        "push   { r2-r3 };"
         "push   { r4-r7 };"
 
-
-
-        "str	sp, [r0];"
+        "mov    r3, sp;"
+        "str	r3, [r0];"
         "mov	sp, r1;"
 
         "pop    { r4-r7 };"
-        "mov    r8, r4;"
-        "mov    r9, r5;"
-        "mov    r10, r6;"
-        "mov    r11, r7;" 
-        "pop    {r4};"
-        "mov    lr, r4;"               
-        "pop	{ r4-r7 };"    
-
-
-        "clrex;"
-        "bx		lr;"
+        "pop    { r0-r3 };"
+        "mov    r8 , r0;"
+        "mov    r9 , r1;"
+        "mov    r10, r2;"
+        "mov    r11, r3;" 
+        "pop    { pc };"
     );
 }
 
@@ -211,15 +206,12 @@ __NAKED static void _thread_mode_bounce(void)
 {
     __asm__ volatile(
         "pop    { r4-r7 };"
-        "mov    r8, r4;"
-        "mov    r9, r5;"
-        "mov    r10, r6;"
-        "mov    r11, r7;" 
-        "pop    {r4};"
-        "mov    lr, r4;"               
-        "pop	{ r4-r7 };"    
-
-        "bx		lr;"
+        "pop    { r0-r3 };"
+        "mov    r8 , r0;"
+        "mov    r9 , r1;"
+        "mov    r10, r2;"
+        "mov    r11, r3;" 
+        "pop    { pc };"
     );
     __UNREACHABLE;
 }
@@ -246,17 +238,14 @@ void arch_context_switch(struct thread *oldthread, struct thread *newthread)
             /* return directly to the preempted thread's iframe */
             __asm__ volatile(
                 "mov	sp, %0;"
-                "cpsie	i;"
+                "cpsie	i;"                
                 "pop    { r4-r7 };"
-                "mov    r8, r4;"
-                "mov    r9, r5;"
-                "mov    r10, r6;"
-                "mov    r11, r7;" 
-                "pop    {r4};"
-                "mov    lr, r4;"               
-                "pop	{ r4-r7 };"    
-                "clrex;"
-                "bx		lr;"
+                "pop    { r0-r3 };"
+                "mov    r8 , r0;"
+                "mov    r9 , r1;"
+                "mov    r10, r2;"
+                "mov    r11, r3;" 
+                "pop    { pc };"
                 :: "r"(newthread->arch.sp)
             );
             __UNREACHABLE;
@@ -274,7 +263,6 @@ void arch_context_switch(struct thread *oldthread, struct thread *newthread)
             //hexdump(frame, sizeof(*frame) + 64);
 
             __asm__ volatile(
-                "clrex;"
                 "mov	sp, %0;"
                 "bx		%1;"
                 :: "r"(frame), "r"(0xfffffff9)
