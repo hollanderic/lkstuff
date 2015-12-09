@@ -280,15 +280,94 @@ static inline void set_current_thread(struct thread *t)
 #else // pre-armv6 || (armv6 & thumb)
 
 /* for pre-armv6 the bodies of these are too big to inline, call an assembly stub version */
-void _arch_enable_ints(void);
-void _arch_disable_ints(void);
 
-int _atomic_add(volatile int *ptr, int val);
-int _atomic_and(volatile int *ptr, int val);
-int _atomic_or(volatile int *ptr, int val);
-int _atomic_add(volatile int *ptr, int val);
-int _atomic_swap(volatile int *ptr, int val);
-int _atomic_cmpxchg(volatile int *ptr, int oldval, int newval);
+
+static inline void _arch_enable_ints(void)
+{
+    CF;
+    __asm__ volatile("cpsie i");
+}
+
+void _arch_disable_ints(void);
+{
+    CF;
+    __asm__ volatile("cpsid i");
+}
+
+/* Since we have no ldrex/strex we need critical regions for atomic operations */
+
+static uint32_t _arch_critical_region_counter = 0;
+
+static inline void _arch_critical_region_enter(void)
+{
+        _arch_disable_ints();
+        _arch_critical_region_counter++;
+}
+
+static inline void _arch_critical_region_exit(void)
+{
+        _arch_critical_region_counter--;
+        if (_arch_critical_region_counter == 0)
+        {
+                _arch_enable_ints();
+        }
+}
+
+int _atomic_add(volatile int *ptr, int val)
+{
+        int temp;
+
+        _arch_critical_region_enter();
+        temp = *ptr;
+        *ptr = temp + val;
+        _arch_critical_region_exit();
+        return temp;
+}
+
+int _atomic_and(volatile int *ptr, int val)
+{
+        int temp;
+
+        _arch_critical_region_enter();
+        temp = *ptr;
+        *ptr = temp & val;
+        _arch_critical_region_exit();
+        return temp;
+}
+
+int _atomic_or(volatile int *ptr, int val)
+{
+        int temp;
+
+        _arch_critical_region_enter();
+        temp = *ptr;
+        *ptr = temp | val;
+        _arch_critical_region_exit();
+        return temp;
+}
+int _atomic_swap(volatile int *ptr, int val)
+{
+        int temp;
+
+        _arch_critical_region_enter();
+        temp = *ptr;
+        *ptr = val;
+        _arch_critical_region_exit();
+        return temp;
+}
+
+int _atomic_cmpxchg(volatile int *ptr, int oldval, int newval)
+{
+        int temp;
+
+        _arch_critical_region_enter();
+        temp = *ptr;
+        if (temp == oldval) {
+                *ptr = newval;
+        }
+        _arch_critical_region_exit();
+        return temp;
+}
 
 uint32_t _arch_cycle_count(void);
 
