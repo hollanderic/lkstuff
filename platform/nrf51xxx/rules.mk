@@ -46,7 +46,7 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/uart.c \
 	$(LOCAL_DIR)/vectab.c \
 	$(LOCAL_DIR)/gpio.c \
-	$(LOCAL_DIR)/system_nrf51.h
+	$(LOCAL_DIR)/system_nrf51.c
 
 
 
