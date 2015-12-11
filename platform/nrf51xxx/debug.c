@@ -25,11 +25,12 @@
 #include <debug.h>
 #include <stdio.h>
 #include <kernel/thread.h>
-#include <platform/debug.h>
-#include <arch/ops.h>
 #include <dev/uart.h>
-#include <target/debugconfig.h>
+#include <arch/ops.h>
 #include <arch/arm/cm.h>
+#include <platform/debug.h>
+#include <target/debugconfig.h>
+
 
 
 void nrf51_debug_early_init(void)

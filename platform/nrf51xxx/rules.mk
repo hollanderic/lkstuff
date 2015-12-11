@@ -56,6 +56,4 @@ MODULE_DEPS += \
 	arch/arm/arm-m/systick \
 	lib/cbuf
 
-include $(LOCAL_DIR)/CMSIS/rules.mk
-
 include make/module.mk

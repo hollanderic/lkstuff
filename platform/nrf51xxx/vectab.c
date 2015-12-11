@@ -23,9 +23,9 @@
 #include <debug.h>
 #include <compiler.h>
 #include <arch/arm/cm.h>
+#include <lib/cbuf.h>
 #include <platform/nrf51.h>
 #include <target/debugconfig.h>
-#include <lib/cbuf.h>
 
 /* un-overridden irq handler */
 void nrf51_dummy_irq(void)

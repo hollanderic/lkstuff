@@ -23,7 +23,7 @@
 #ifndef __PLATFORM_CM_H
 #define __PLATFORM_CM_H
 
-#include <nrf518xx.h>
+#include <platform/nrf518xx.h>
 
 #endif
 

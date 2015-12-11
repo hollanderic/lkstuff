@@ -34,7 +34,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <platform/nrf51.h>
-#include "system_nrf51.h"
+#include <platform/system_nrf51.h>
 
 /*lint ++flb "Enter library region" */
 

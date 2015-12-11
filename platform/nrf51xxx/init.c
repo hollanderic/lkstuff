@@ -22,11 +22,13 @@
  */
 #include <err.h>
 #include <debug.h>
+#include <arch/arm/cm.h>
 #include <dev/uart.h>
 #include <platform.h>
 #include <platform/nrf51.h>
-#include <arch/arm/cm.h>
-#include <system_nrf51.h>
+#include <platform/system_nrf51.h>
+
+
 
 void platform_early_init(void)
 {

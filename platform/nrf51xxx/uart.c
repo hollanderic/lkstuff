@@ -25,20 +25,21 @@
 #include <debug.h>
 #include <stdio.h>
 #include <assert.h>
+#include <err.h>
 #include <lib/cbuf.h>
-#include <kernel/thread.h>
-#include <platform/debug.h>
-#include <platform/gpio.h>
+#include <arch/arm/cm.h>
 #include <arch/ops.h>
 #include <dev/uart.h>
 #include <dev/gpio.h>
+#include <kernel/thread.h>
+#include <platform/debug.h>
+#include <platform/gpio.h>
 #include <target/debugconfig.h>
 #include <target/gpioconfig.h>
-#include <arch/arm/cm.h>
 
 #define RXBUF_SIZE 16
 
-cbuf_t uart0_rx_buf;
+//cbuf_t uart0_rx_buf;
 
 
 
@@ -69,30 +70,32 @@ void uart_init_early(void)
 void uart_init(void)
 {
 #ifdef ENABLE_UART0
-    cbuf_initialize(&uart0_rx_buf, RXBUF_SIZE);
-    NRF_UART0->INTENSET =   UART_INTENSET_TXDRDY_Enabled << UART_INTENSET_TXDRDY_Pos |\
-                            UART_INTENSET_RXDRDY_Enabled << UART_INTENSET_RXDRDY_Pos;
+//    cbuf_initialize(&uart0_rx_buf, RXBUF_SIZE);
+//    NRF_UART0->INTENSET = UART_INTENSET_RXDRDY_Enabled << UART_INTENSET_RXDRDY_Pos;
     NRF_UART0->EVENTS_RXDRDY = 0;
-    NVIC_EnableIRQ(UART0_IRQn);
-    volatile char c = NRF_UART0->RXD;
+//    NVIC_EnableIRQ(UART0_IRQn);
+    char c = NRF_UART0->RXD;
+    (void)c;
 #endif //ENABLE_UART0
 }
 
 void nrf51_UART0_IRQ(void)
 {
-	arm_cm_irq_entry();
-
+//  char c;
+    arm_cm_irq_entry();
+/*
 	bool resched = false;
 	while ( NRF_UART0->EVENTS_RXDRDY > 0 ) {
+        NRF_UART0->EVENTS_RXDRDY = 0;
+        c = NRF_UART0->RXD;
 		if (!cbuf_space_avail(&uart0_rx_buf)) {
 			break;
 		}
-        NRF_UART0->EVENTS_RXDRDY = 0;
-        char c = NRF_UART0->RXD;
 		cbuf_write_char(&uart0_rx_buf, c, false);
 		resched = true;
 	}
-	arm_cm_irq_exit(resched);
+*/
+	arm_cm_irq_exit(false);
 }
 
 int uart_putc(int port, char c)
@@ -105,16 +108,13 @@ int uart_putc(int port, char c)
 
 int uart_getc(int port, bool wait)
 {
-	char c;
-	//cbuf_read_char(&uart0_rx_buf, &c, wait);
     do {
 	    if (NRF_UART0->EVENTS_RXDRDY > 0) {
                 NRF_UART0->EVENTS_RXDRDY=0;
                 return NRF_UART0->RXD;
         }
     } while (wait);
-
-    return 0;//c;
+    return 0;
 }
 
 void uart_flush_tx(int port) {}

@@ -40,8 +40,8 @@ void arch_early_init(void)
 {
 
     arch_disable_ints();
-#if     (__CORTEX_M >= 0x03) || (CORTEX_SC >= 300)
 
+#if     (__CORTEX_M >= 0x03) || (CORTEX_SC >= 300)
     uint i;
     /* set the vector table base */
     SCB->VTOR = (uint32_t)&vectab;
@@ -83,10 +83,9 @@ void arch_early_init(void)
     /* set systick and debugmonitor to medium priority */
     NVIC_SetPriority(SysTick_IRQn, arm_cm_medium_priority());
     NVIC_SetPriority(DebugMonitor_IRQn, arm_cm_medium_priority());
-
+#endif
 #if ARM_WITH_CACHE
     arch_enable_cache(UCACHE);
-#endif
 #endif
 }
 
@@ -149,9 +148,8 @@ void arm_cm_irq_exit(bool reschedule)
         arm_cm_trigger_preempt();
 
     KEVLOG_IRQ_EXIT(__get_IPSR());
-
-    __enable_irq(); // clear PRIMASK
 #endif
+    __enable_irq(); // clear PRIMASK
 }
 
 void arch_chain_load(void *entry, ulong arg0, ulong arg1, ulong arg2, ulong arg3)
