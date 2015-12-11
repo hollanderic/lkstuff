@@ -179,7 +179,7 @@ endif
 THUMBCFLAGS :=
 THUMBINTERWORK :=
 ifeq ($(ENABLE_THUMB),true)
-THUMBCFLAGS := -mthumb -D__thumb2__
+THUMBCFLAGS := -mthumb -D__thumb__
 THUMBINTERWORK := -mthumb-interwork
 endif
 

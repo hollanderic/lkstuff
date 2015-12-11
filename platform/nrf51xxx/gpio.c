@@ -46,7 +46,9 @@ int gpio_config(unsigned nr, unsigned flags)
 		} else {
             init    =   GPIO_PIN_CNF_PULL_Disabled << GPIO_PIN_CNF_PULL_Pos;
 		}
-        NRF_GPIO->PIN_CNF[nr] = GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos | init;
+        NRF_GPIO->PIN_CNF[nr] = GPIO_PIN_CNF_DIR_Input      <<  GPIO_PIN_CNF_DIR_Pos    | \
+                                GPIO_PIN_CNF_INPUT_Connect  <<  GPIO_PIN_CNF_INPUT_Pos  | \
+                                init;
 	}
 	return 0;
 }
