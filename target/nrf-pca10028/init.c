@@ -36,13 +36,12 @@ void target_early_init(void)
     gpio_config(GPIO_LED2, GPIO_OUTPUT);
     gpio_config(GPIO_LED3, GPIO_OUTPUT);
     gpio_config(GPIO_LED4, GPIO_OUTPUT);
-	
+
 	gpio_set(GPIO_LED1,1);
 	gpio_set(GPIO_LED2,1);
 	gpio_set(GPIO_LED3,0);
 	gpio_set(GPIO_LED4,0);
-	
-	
+
 	nrf51_debug_early_init();
 }
 
@@ -50,4 +49,5 @@ void target_early_init(void)
 void target_init(void)
 {
 	nrf51_debug_init();
+    dprintf(SPEW,"Nordic PCA10028 DK for nRF51822...\n");
 }

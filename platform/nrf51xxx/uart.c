@@ -28,9 +28,12 @@
 #include <lib/cbuf.h>
 #include <kernel/thread.h>
 #include <platform/debug.h>
+#include <platform/gpio.h>
 #include <arch/ops.h>
 #include <dev/uart.h>
+#include <dev/gpio.h>
 #include <target/debugconfig.h>
+#include <target/gpioconfig.h>
 #include <arch/arm/cm.h>
 
 #define RXBUF_SIZE 16
@@ -44,9 +47,11 @@ void uart_init_early(void)
 #ifdef ENABLE_UART0
 
 #ifdef  UART0_TX_PIN
+    gpio_config(UART0_TX_PIN,GPIO_OUTPUT);
     NRF_UART0->PSELTXD =   UART0_TX_PIN;
 #endif
 #ifdef  UART0_RX_PIN
+    gpio_config(UART0_RX_PIN,GPIO_INPUT);
     NRF_UART0->PSELRXD =   UART0_RX_PIN;
 #endif
 
@@ -55,7 +60,9 @@ void uart_init_early(void)
                             UART_CONFIG_PARITY_Excluded << UART_CONFIG_PARITY_Pos;
     NVIC_DisableIRQ(UART0_IRQn);
     NRF_UART0->ENABLE   =   UART_ENABLE_ENABLE_Enabled << UART_ENABLE_ENABLE_Pos;
-
+    NRF_UART0->TXD      = 'E';
+    NRF_UART0->TASKS_STARTTX=1;
+    NRF_UART0->TASKS_STARTRX=1;
 #endif //ENABLE_UART0
 }
 
@@ -65,7 +72,9 @@ void uart_init(void)
     cbuf_initialize(&uart0_rx_buf, RXBUF_SIZE);
     NRF_UART0->INTENSET =   UART_INTENSET_TXDRDY_Enabled << UART_INTENSET_TXDRDY_Pos |\
                             UART_INTENSET_RXDRDY_Enabled << UART_INTENSET_RXDRDY_Pos;
+    NRF_UART0->EVENTS_RXDRDY = 0;
     NVIC_EnableIRQ(UART0_IRQn);
+    volatile char c = NRF_UART0->RXD;
 #endif //ENABLE_UART0
 }
 
@@ -78,25 +87,34 @@ void nrf51_UART0_IRQ(void)
 		if (!cbuf_space_avail(&uart0_rx_buf)) {
 			break;
 		}
-		char c = NRF_UART0->RXD;
+        NRF_UART0->EVENTS_RXDRDY = 0;
+        char c = NRF_UART0->RXD;
 		cbuf_write_char(&uart0_rx_buf, c, false);
 		resched = true;
 	}
-	arm_cm_irq_exit(resched);	
+	arm_cm_irq_exit(resched);
 }
 
 int uart_putc(int port, char c)
 {
 	while (NRF_UART0->EVENTS_TXDRDY == 0);
-	NRF_UART0->TXD = c;	
+	NRF_UART0->TXD = c;
+    NRF_UART0->EVENTS_TXDRDY = 0;
 	return 1;
 }
 
 int uart_getc(int port, bool wait)
 {
 	char c;
-	cbuf_read_char(&uart0_rx_buf, &c, wait);
-	return c;
+	//cbuf_read_char(&uart0_rx_buf, &c, wait);
+    do {
+	    if (NRF_UART0->EVENTS_RXDRDY > 0) {
+                NRF_UART0->EVENTS_RXDRDY=0;
+                return NRF_UART0->RXD;
+        }
+    } while (wait);
+
+    return 0;//c;
 }
 
 void uart_flush_tx(int port) {}
