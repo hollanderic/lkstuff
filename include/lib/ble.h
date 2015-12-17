@@ -23,6 +23,8 @@
 #ifndef __LIB_BLE_H
 #define __LIB_BLE_H
 
+#include <kernel/thread.h>
+
 typedef struct {
 
     uint8_t adv_addr[6];
@@ -63,17 +65,19 @@ typedef enum {
     HW_ADDR_TYPE_RANDOM
 } ble_addr_type_t;
 
-typedef struct {
 
+typedef struct {
+    thread_t        *ble_thread;
+    void            *radio_handle;
     uint32_t        crc_init;      //CRC initialization value for the link
     uint8_t         channel;          //transmission frequency
     uint32_t        access_address;
     packet_type_t   packet_type;
-    ble_packet_t   *packet_p;
+    //ble_packet_t   *packet_p;
+} ble_t;
 
-} ble_t
 
-
+void ble_initialize(ble_t *ble_p);
 
 void ble_set_sleepclock_accuracy(ble_t * instance_p, scan_clock_accuracy_t accuracy);
 

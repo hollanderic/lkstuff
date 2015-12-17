@@ -19,38 +19,27 @@
  * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+*/
+
+#ifndef __BLE_RADIO_H
+#define __BLE_RADIO_H
 
 #include <lib/ble.h>
-#include <kernel/thread.h>
-#include <dev/ble_radio.h>
+
+/*
+    Initialize the radio to ble mode, place in idle.
+    This will perform necessary checks to ensure configuration
+    is viable to ramp up for transmission or reception.
+*/
+void ble_radio_initialize(ble_t *ble_p);
+
+/*
+ *	Returns hw addr(mac) and type.  platforms not suporting feature return -1
+ *
+ */
+int32_t ble_get_hw_addr(uint8_t * addr_p, ble_addr_type_t * addr_type_p);
 
 
 
 
-static int _ble_run(void *arg){
-	while (1) {
-		thread_sleep(1000);
-		printf("kick it!\n");
-
-	}
-	return 0;
-}
-
-
-void ble_initialize( ble_t *ble_p ) {
-
-	ble_radio_initialize( ble_p );
-
-	
-	ble_p->ble_thread = thread_create( "BluetoothSmart Thread", &_ble_run, ble_p, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE );
-
-}
-
-
-
-
-
-
-
-
+ #endif

@@ -26,6 +26,7 @@
 #include <compiler.h>
 #include <dev/gpio.h>
 #include <kernel/timer.h>
+#include <lib/ble.h>
 #include <platform/gpio.h>
 #include <platform/nrf51.h>
 #include <target/gpioconfig.h>
@@ -33,6 +34,7 @@
 
 static timer_t  blinktimer;
 static bool heartbeat = false;
+static ble_t ble1;
 
 void target_early_init(void)
 {
@@ -76,4 +78,9 @@ void target_init(void)
     dprintf(SPEW,"Target: PCA10000 DK...\n");
     timer_initialize(&blinktimer);
     timer_set_oneshot(&blinktimer, 1000, blinker, NULL);
+
+    ble1.radio_handle = NRF_RADIO;
+
+    ble_initialize( &ble1 );
+
 }
