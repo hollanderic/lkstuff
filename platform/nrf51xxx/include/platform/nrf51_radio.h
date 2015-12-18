@@ -26,7 +26,7 @@ typedef struct {
     uint8_t s0;
     uint8_t length;
     uint8_t s1;
-    uint8_t data[100];
+    uint8_t data[64];
 
 } nrf_packet_buffer_t;
 

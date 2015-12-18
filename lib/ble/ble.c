@@ -23,32 +23,108 @@
 
 #include <lib/ble.h>
 #include <kernel/thread.h>
+#include <kernel/mutex.h>
 #include <dev/ble_radio.h>
 
-
-
+void ble_dump_packet(ble_t *ble_p);
 
 static int _ble_run(void *arg){
-	while (1) {
+
+    ble_t *ble_p = (ble_t *)arg;
+
+    while (1) {
+        //do magical ble shit here
+
+        if ( mutex_acquire_timeout(&(ble_p->lock),0) == NO_ERROR )
+        {
+            switch(ble_p->state) {
+                case BLE_IDLE:
+                    //ble_dump_packet(ble_p);
+                    break;
+            }
+        }
+
+        mutex_release(&(ble_p->lock));
 		thread_sleep(1000);
-		printf("kick it!\n");
 
 	}
 	return 0;
 }
 
 
-void ble_initialize( ble_t *ble_p ) {
+ble_status_t ble_start_advertising( ble_t *ble_p){
 
-	ble_radio_initialize( ble_p );
+    if (ble_p->state != BLE_IDLE)
+        return BLE_ERR_NOT_IDLE;
 
-	
-	ble_p->ble_thread = thread_create( "BluetoothSmart Thread", &_ble_run, ble_p, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE );
+
+
+    return BLE_NO_ERROR;
+}
+
+uint8_t _ble_remaining_pdu(ble_t *ble_p) {
+
+    if (ble_p->packet_type == ADV_CHANNEL_PDU) {
+        return  BLE_MAX_ADV_PDU_SIZE - ble_p->payload_length;
+    } else {
+        return  BLE_MAX_DATA_PDU_SIZE - ble_p->payload_length;
+    }
+}
+
+ble_status_t ble_go_idle(ble_t *ble_p){
+
+    return BLE_NO_ERROR;
+}
+
+ble_status_t ble_pdu_add_shortname(ble_t *ble_p, uint8_t * str, uint8_t len){
+
+    BLE_CHECK_AND_LOCK(ble_p);
+
+    if ( _ble_remaining_pdu(ble_p) < ( len + 2 )) {
+        BLE_UNLOCK(ble_p);
+        return BLE_ERR_PDU_FULL;
+    }
+    ble_p->payload.buff[ ble_p->payload_length    ] = 0;
+    ble_p->payload.buff[ ble_p->payload_length + 1] = 0;
+
+    ble_p->payload_length +=2;
+
+    for (int i=0 ; i < len ; i++) {
+        ble_p->payload.buff[ ble_p->payload_length + i ] = str[i];
+    }
+    ble_p->payload_length += len;
+
+    BLE_UNLOCK(ble_p);
+
+    return BLE_NO_ERROR;
 
 }
 
 
+void ble_initialize( ble_t *ble_p ) {
 
+    mutex_init( &(ble_p->lock) );
+    ble_p->payload_length = 0;
+    ble_get_hw_addr( ble_p );
+
+	ble_p->ble_thread = thread_create( "BLE thread", &_ble_run, ble_p, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE );
+
+    ble_radio_initialize( ble_p );
+
+    thread_detach_and_resume(ble_p->ble_thread);
+}
+
+
+void ble_dump_packet(ble_t *ble_p){
+
+    uint16_t pdu_header = ( 0x55 << 8) + ble_p->payload_length;
+
+    printf(" %08x - %04x -", ble_p->access_address, pdu_header);
+    for (int i = 0; i < ble_p->payload_length ; i++)
+        printf("%02x", ble_p->payload.buff[i]);
+    printf("\n");
+
+}
 
 
 

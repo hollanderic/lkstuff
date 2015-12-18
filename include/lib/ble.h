@@ -23,7 +23,11 @@
 #ifndef __LIB_BLE_H
 #define __LIB_BLE_H
 
+#include <err.h>
 #include <kernel/thread.h>
+#include <kernel/mutex.h>
+
+
 
 typedef struct {
 
@@ -44,6 +48,13 @@ typedef struct {
 typedef uint8_t ble_addr_t[6];
 
 typedef enum {
+    BLE_NO_ERROR,
+    BLE_ERR_NOT_IDLE,
+    BLE_ERR_NOLOCK,
+    BLE_ERR_PDU_FULL,
+} ble_status_t;
+
+typedef enum {
     SCA_251_500,
     SCA_151_250,
     SCA_101_150,
@@ -56,9 +67,25 @@ typedef enum {
 } scan_clock_accuracy_t;
 
 typedef enum {
-    ADV_CHANNEL_PDU,
-    DATA_CHANNEL_PDU
-} packet_type_t;
+
+    BLE_IDLE,
+    BLE_ADVERTISING,
+    BLE_BEACONING,
+    BLE_SCANNING,
+    BLE_CONNECTED,
+
+} ble_state_t;
+
+
+typedef enum {
+    PDU_ADV_IND,
+    PDU_ADV_DIRECT_IND,
+    PDU_ADV_NONCONN_IND,
+    PDU_SCAN_REQ,
+    PDU_SCAN_RSP,
+    PDU_CONNECT_REQ,
+    PDU_ADV_SCAN_IND,
+} pdu_type_t;
 
 typedef enum {
     HW_ADDR_TYPE_PUBLIC,
@@ -66,20 +93,44 @@ typedef enum {
 } ble_addr_type_t;
 
 
+typedef union {
+        uint8_t *buff;
+} ble_payload_t;
+
+
+/*
+*   The main brain of the ble instance.  Since many radios have some form of dma that reequire
+*       a specific memory layout to enable automating various things (encryption, crc, etc) then
+*       the call to ble_radio_init will initialize the poitner to the payload buffer.  NOTE: this
+*       is only the PDU payload and does not include the PDU header.
+*/
 typedef struct {
     thread_t        *ble_thread;
     void            *radio_handle;
-    uint32_t        crc_init;      //CRC initialization value for the link
-    uint8_t         channel;          //transmission frequency
+    mutex_t         lock;
+    ble_state_t     state;
+    uint32_t        interval;
+    uint32_t        crc_init;           // CRC initialization value for the link
+    uint8_t         channel;
     uint32_t        access_address;
-    packet_type_t   packet_type;
-    //ble_packet_t   *packet_p;
+    uint8_t         hw_addr[6];
+    ble_addr_type_t hw_addr_type;
+    pdu_type_t      pdu_type;
+    uint8_t         payload_length;
+    ble_payload_t   payload;
 } ble_t;
 
 
-void ble_initialize(ble_t *ble_p);
 
+
+void ble_initialize(ble_t *ble_p);
 void ble_set_sleepclock_accuracy(ble_t * instance_p, scan_clock_accuracy_t accuracy);
+ble_status_t ble_pdu_add_shortname(ble_t *ble_p, uint8_t * str, uint8_t len);
+ble_status_t ble_go_idle(ble_t *ble_p);
+
+#define BLE_MAX_ADV_PDU_SIZE                64
+#define BLE_MAX_DATA_PDU_SIZE               32
+
 
 #define BLE_PREAMBLE_ADVERTISING            0Xaa
 #define BLE_PREAMBLE_DATACHANNEL_LSB0       0x55
@@ -138,6 +189,17 @@ void ble_set_sleepclock_accuracy(ble_t * instance_p, scan_clock_accuracy_t accur
 #define GAP_ADTYPE_SERVICE_DATA                 0x16
 #define GAP_ADTYPE_APPEARANCE                   0x19
 #define GAP_ADTYPE_MANUFACTURER_SPECIFIC        0xFF
+
+
+
+#define BLE_CHECK_AND_LOCK(x)   \
+        if (x->state != BLE_IDLE) \
+            return BLE_ERR_NOT_IDLE; \
+        if (mutex_acquire_timeout(&(x->lock),0) != NO_ERROR) \
+            return BLE_ERR_NOLOCK;
+
+#define BLE_UNLOCK(x)    \
+        mutex_release(&(x->lock));
 
 
 #endif

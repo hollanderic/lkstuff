@@ -35,6 +35,10 @@
 static timer_t  blinktimer;
 static bool heartbeat = false;
 static ble_t ble1;
+const char loadstr[] = "lk Beacon";
+
+static thread_t *blinkthread;
+
 
 void target_early_init(void)
 {
@@ -55,18 +59,19 @@ void target_early_init(void)
 	nrf51_debug_early_init();
 }
 
-static enum handler_return blinker(timer_t * timer, lk_time_t now, void * args){
-
-    if (heartbeat) {
-        heartbeat = false;
-        gpio_set(GPIO_LED1,1); //turn off led
-        timer_set_oneshot(timer,950, blinker, NULL);
-    } else {
-        heartbeat = true;
-        gpio_set(GPIO_LED1,0);
-        timer_set_oneshot(timer,50, blinker, NULL);
+static int blinker(void * args){
+    while (1) {
+        ble_pdu_add_shortname(&ble1,loadstr,9);
+        if (heartbeat) {
+            heartbeat = false;
+            gpio_set(GPIO_LED1,1); //turn off led
+        } else {
+            heartbeat = true;
+            gpio_set(GPIO_LED1,0);
+        }
+        thread_sleep(500);
     }
-    return INT_RESCHEDULE;
+    return 0;
 }
 
 
@@ -74,13 +79,13 @@ static enum handler_return blinker(timer_t * timer, lk_time_t now, void * args){
 
 void target_init(void)
 {
-	nrf51_debug_init();
+    nrf51_debug_init();
     dprintf(SPEW,"Target: PCA10000 DK...\n");
-    timer_initialize(&blinktimer);
-    timer_set_oneshot(&blinktimer, 1000, blinker, NULL);
 
     ble1.radio_handle = NRF_RADIO;
 
     ble_initialize( &ble1 );
 
+    blinkthread = thread_create( "blinky", &blinker , NULL, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE );
+    thread_resume(blinkthread);
 }

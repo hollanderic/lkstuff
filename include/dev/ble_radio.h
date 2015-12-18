@@ -37,8 +37,7 @@ void ble_radio_initialize(ble_t *ble_p);
  *	Returns hw addr(mac) and type.  platforms not suporting feature return -1
  *
  */
-int32_t ble_get_hw_addr(uint8_t * addr_p, ble_addr_type_t * addr_type_p);
-
+int32_t ble_get_hw_addr(ble_t *ble_p);
 
 
 
