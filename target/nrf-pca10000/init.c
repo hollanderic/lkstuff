@@ -32,7 +32,6 @@
 #include <target/gpioconfig.h>
 
 
-static timer_t  blinktimer;
 static bool heartbeat = false;
 static ble_t ble1;
 const char loadstr[] = "lk Beacon";
@@ -82,7 +81,7 @@ void target_init(void)
     nrf51_debug_init();
     dprintf(SPEW,"Target: PCA10000 DK...\n");
 
-    ble1.radio_handle = NRF_RADIO;
+    ble1.radio_handle = (uint32_t *)NRF_RADIO;
 
     ble_initialize( &ble1 );
 

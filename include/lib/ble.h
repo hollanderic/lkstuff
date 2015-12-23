@@ -77,15 +77,25 @@ typedef enum {
 } ble_state_t;
 
 
+
+#define PDU_TYPE_ADV    0x00
+#define PDU_TYPE_DATA   0x10
+#define PDU_TYPE_MASK   0xf0
+
 typedef enum {
-    PDU_ADV_IND,
+    PDU_ADV_IND = PDU_TYPE_ADV,
     PDU_ADV_DIRECT_IND,
     PDU_ADV_NONCONN_IND,
     PDU_SCAN_REQ,
     PDU_SCAN_RSP,
     PDU_CONNECT_REQ,
     PDU_ADV_SCAN_IND,
+
+    PDU_DATA_LLDATA = PDU_TYPE_DATA,
+    PDU_DATA_LLCONTROL,
 } pdu_type_t;
+
+
 
 typedef enum {
     HW_ADDR_TYPE_PUBLIC,
@@ -98,6 +108,8 @@ typedef union {
 } ble_payload_t;
 
 
+
+
 /*
 *   The main brain of the ble instance.  Since many radios have some form of dma that reequire
 *       a specific memory layout to enable automating various things (encryption, crc, etc) then
@@ -106,7 +118,7 @@ typedef union {
 */
 typedef struct {
     thread_t        *ble_thread;
-    void            *radio_handle;
+    uint32_t        *radio_handle;
     mutex_t         lock;
     ble_state_t     state;
     uint32_t        interval;
@@ -125,7 +137,12 @@ typedef struct {
 
 void ble_initialize(ble_t *ble_p);
 void ble_set_sleepclock_accuracy(ble_t * instance_p, scan_clock_accuracy_t accuracy);
-ble_status_t ble_pdu_add_shortname(ble_t *ble_p, uint8_t * str, uint8_t len);
+
+
+ble_status_t ble_gatt_add_shortname(ble_t *ble_p, uint8_t * str, uint8_t len);
+
+
+
 ble_status_t ble_go_idle(ble_t *ble_p);
 
 #define BLE_MAX_ADV_PDU_SIZE                64
@@ -200,6 +217,5 @@ ble_status_t ble_go_idle(ble_t *ble_p);
 
 #define BLE_UNLOCK(x)    \
         mutex_release(&(x->lock));
-
 
 #endif

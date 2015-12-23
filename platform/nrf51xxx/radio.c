@@ -23,6 +23,7 @@
 
 #include <platform/nrf51.h>
 #include <lib/ble.h>
+#include <arch/arm/cm.h>
 #include <dev/ble_radio.h>
 #include <platform/nrf51_radio.h>
 
@@ -40,7 +41,7 @@ static nrf_packet_buffer_t nrf_packet_buffer;
 #define NRF_RADIO_CAST(x)   ((NRF_RADIO_Type *)(x->radio_handle))
 
 
-void nrf51_RTC1_IRQ (void) {
+void nrf51_RADIO_IRQ (void) {
 
     arm_cm_irq_entry();
 
@@ -48,7 +49,7 @@ void nrf51_RTC1_IRQ (void) {
 
 
 
-    arm_cm_irq_exit();
+    arm_cm_irq_exit(false);
 }
 
 
@@ -93,12 +94,12 @@ void ble_radio_initialize(ble_t *ble_p) {
 }
 
 
-void ble_radio_start_tx(ble_p){
+void ble_radio_start_tx(ble_t * ble_p){
 
     nrf_packet_buffer.s0        = ble_p->pdu_type;
     nrf_packet_buffer.length    = ble_p->payload_length;
     nrf_packet_buffer.s1        = 0;
-    NRF_RADIO_CAST(ble_p)->PACKETPTR    =   &nrf_packet_buffer;
+    NRF_RADIO_CAST(ble_p)->PACKETPTR    =   (uint32_t )&nrf_packet_buffer;
     NRF_RADIO_CAST(ble_p)->PCNF0        =   6 << RADIO_PCNF0_LFLEN_Pos | \
                                             1 << RADIO_PCNF0_S0LEN_Pos | \
                                             2 << RADIO_PCNF0_S1LEN_Pos;
@@ -111,7 +112,7 @@ void ble_radio_start_tx(ble_p){
 }
 
 /*
-    Returns hw addr(mac) and type.  platforms not suporting feature return -1
+    loads hw addr(mac) and type.
 
 */
 int32_t ble_get_hw_addr(ble_t *ble_p) {

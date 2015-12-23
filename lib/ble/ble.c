@@ -52,11 +52,15 @@ static int _ble_run(void *arg){
 }
 
 
-ble_status_t ble_start_advertising( ble_t *ble_p){
+ble_status_t ble_start_beacon( ble_t *ble_p){
 
     if (ble_p->state != BLE_IDLE)
         return BLE_ERR_NOT_IDLE;
 
+    ble_p->access_address   = BLE_ACCESSADDRESS_ADVERTISING;
+    ble_p->pdu_type         = PDU_ADV_NONCONN_IND;
+
+    //ble_radio_start_tx(ble_p);
 
 
     return BLE_NO_ERROR;
@@ -64,7 +68,7 @@ ble_status_t ble_start_advertising( ble_t *ble_p){
 
 uint8_t _ble_remaining_pdu(ble_t *ble_p) {
 
-    if (ble_p->packet_type == ADV_CHANNEL_PDU) {
+    if ( (ble_p->pdu_type & PDU_TYPE_MASK) == PDU_TYPE_ADV) {
         return  BLE_MAX_ADV_PDU_SIZE - ble_p->payload_length;
     } else {
         return  BLE_MAX_DATA_PDU_SIZE - ble_p->payload_length;
@@ -76,7 +80,7 @@ ble_status_t ble_go_idle(ble_t *ble_p){
     return BLE_NO_ERROR;
 }
 
-ble_status_t ble_pdu_add_shortname(ble_t *ble_p, uint8_t * str, uint8_t len){
+ble_status_t ble_gatt_add_shortname(ble_t *ble_p, uint8_t * str, uint8_t len){
 
     BLE_CHECK_AND_LOCK(ble_p);
 
@@ -84,8 +88,8 @@ ble_status_t ble_pdu_add_shortname(ble_t *ble_p, uint8_t * str, uint8_t len){
         BLE_UNLOCK(ble_p);
         return BLE_ERR_PDU_FULL;
     }
-    ble_p->payload.buff[ ble_p->payload_length    ] = 0;
-    ble_p->payload.buff[ ble_p->payload_length + 1] = 0;
+    ble_p->payload.buff[ ble_p->payload_length    ] = GAP_ADTYPE_LOCAL_NAME_SHORT;
+    ble_p->payload.buff[ ble_p->payload_length + 1] = len;
 
     ble_p->payload_length +=2;
 
