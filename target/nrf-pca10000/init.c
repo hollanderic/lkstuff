@@ -60,7 +60,7 @@ void target_early_init(void)
 
 static int blinker(void * args){
     while (1) {
-        ble_pdu_add_shortname(&ble1,loadstr,9);
+        //ble_pdu_add_shortname(&ble1,loadstr,9);
         if (heartbeat) {
             heartbeat = false;
             gpio_set(GPIO_LED1,1); //turn off led
@@ -84,6 +84,18 @@ void target_init(void)
     ble1.radio_handle = (uint32_t *)NRF_RADIO;
 
     ble_initialize( &ble1 );
+
+
+    if (NRF_RADIO->STATE == RADIO_STATE_STATE_Disabled) {
+        dprintf(SPEW,"Radio presently disabled\n");
+        dprintf(SPEW,"Ramping radio up in RX mode\n");
+        NRF_RADIO->TASKS_RXEN = 1;
+        dprintf(SPEW,"Waiting for RXIDLE...\n");
+        while (NRF_RADIO->STATE != RADIO_STATE_STATE_RxIdle);
+        dprintf(SPEW,"In State RxIdle\n");
+    }
+
+
 
     blinkthread = thread_create( "blinky", &blinker , NULL, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE );
     thread_resume(blinkthread);

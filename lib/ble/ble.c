@@ -52,6 +52,8 @@ static int _ble_run(void *arg){
 }
 
 
+
+
 ble_status_t ble_start_beacon( ble_t *ble_p){
 
     if (ble_p->state != BLE_IDLE)
