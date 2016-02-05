@@ -51,22 +51,39 @@ static int _ble_run(void *arg){
 	return 0;
 }
 
+/*
+    Sets up state for ADV_NONCONN_IND advertising.
+*/
 
 
+ble_status_t ble_init_adv_nonconn_ind( ble_t *ble_p){
+// TODO - make it where it can handle public or private adv addresses?
 
-ble_status_t ble_start_beacon( ble_t *ble_p){
-
-    if (ble_p->state != BLE_IDLE)
+    if (ble_p->state != BLE_IDLE)   //Check if idle, don't want to trash buffer while in flight
         return BLE_ERR_NOT_IDLE;
 
     ble_p->access_address   = BLE_ACCESSADDRESS_ADVERTISING;
     ble_p->pdu_type         = PDU_ADV_NONCONN_IND;
+
+    ble_p->hw_addr_type = HW_ADDR_TYPE_PUBLIC;
+
+    ble_p->payload.buff[0] = ble_p->hw_addr[0];
+    ble_p->payload.buff[1] = ble_p->hw_addr[1];
+    ble_p->payload.buff[2] = ble_p->hw_addr[2];
+    ble_p->payload.buff[3] = ble_p->hw_addr[3];
+    ble_p->payload.buff[4] = ble_p->hw_addr[4];
+    ble_p->payload.buff[5] = ble_p->hw_addr[5];
+
+    ble_p->payload_length = 6;
+
 
     //ble_radio_start_tx(ble_p);
 
 
     return BLE_NO_ERROR;
 }
+
+
 
 uint8_t _ble_remaining_pdu(ble_t *ble_p) {
 

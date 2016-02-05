@@ -30,6 +30,7 @@
 #include <platform/gpio.h>
 #include <platform/nrf51.h>
 #include <target/gpioconfig.h>
+#include <dev/ble_radio.h>
 
 
 static bool heartbeat = false;

@@ -93,10 +93,16 @@ void ble_radio_initialize(ble_t *ble_p) {
 
 }
 
-
-void ble_radio_start_tx(ble_t * ble_p){
+/*
+    Configures all the tx mechanisms in preparation for TX.
+        This includes channel, whitening init, length fields, etc.
+        Assumes that the payload is already laid out in RAM buffer.
+*/
+void ble_radio_init_tx(ble_t * ble_p){
 
     nrf_packet_buffer.s0        = ble_p->pdu_type;
+// TODO - do we need to factor in the address type in the preamble fields?
+
     nrf_packet_buffer.length    = ble_p->payload_length;
     nrf_packet_buffer.s1        = 0;
     NRF_RADIO_CAST(ble_p)->PACKETPTR    =   (uint32_t )&nrf_packet_buffer;
@@ -108,9 +114,17 @@ void ble_radio_start_tx(ble_t * ble_p){
     NRF_RADIO_CAST(ble_p)->PREFIX0      =   (ble_p->access_address >> 24) & 0xff;
     NRF_RADIO_CAST(ble_p)->CRCINIT      =   BLE_CRC_INITIAL_ADV;
     NRF_RADIO_CAST(ble_p)->DATAWHITEIV  =   ble_p->channel;
+    NRF_RADIO_CAST(ble_p)->FREQUENCY    =   (ble_p->channel << 1) + 2;
+
 
 }
 
+
+void ble_radio_start_rx(ble_t * ble_p){
+
+
+
+}
 /*
     loads hw addr(mac) and type.
 
@@ -128,6 +142,18 @@ int32_t ble_get_hw_addr(ble_t *ble_p) {
 
     return 0;
 }
+/*
+    Set the channel, takes the RF channel index number (2402 = channel index 0)
+        also sets the whitening initial value based on the channel index
+*/
+int32_t ble_radio_set_channel(ble_t * ble_p, uint8_t channel){
+
+    NRF_RADIO_CAST(ble_p)->FREQUENCY = (channel << 1) + 2;
+    NRF_RADIO_CAST(ble_p)->DATAWHTIEIV = channel;
+
+    return 0;
+}
+
 
 
 
