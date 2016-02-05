@@ -29,6 +29,7 @@
 #include <lib/ble.h>
 #include <platform/gpio.h>
 #include <platform/nrf51.h>
+#include <platform/nrf51_radio.h>
 #include <target/gpioconfig.h>
 #include <dev/ble_radio.h>
 
@@ -38,7 +39,7 @@ static ble_t ble1;
 const char loadstr[] = "lk Beacon";
 
 static thread_t *blinkthread;
-
+static const char lkbeacon[] = "LKBeacon";
 
 void target_early_init(void)
 {
@@ -79,6 +80,8 @@ static int blinker(void * args){
 
 void target_init(void)
 {
+
+
     nrf51_debug_init();
     dprintf(SPEW,"Target: PCA10000 DK...\n");
 
@@ -89,12 +92,59 @@ void target_init(void)
 
     if (NRF_RADIO->STATE == RADIO_STATE_STATE_Disabled) {
         dprintf(SPEW,"Radio presently disabled\n");
-        dprintf(SPEW,"Ramping radio up in RX mode\n");
-        NRF_RADIO->TASKS_RXEN = 1;
-        dprintf(SPEW,"Waiting for RXIDLE...\n");
-        while (NRF_RADIO->STATE != RADIO_STATE_STATE_RxIdle);
-        dprintf(SPEW,"In State RxIdle\n");
+        dprintf(SPEW,"Ramping radio up in TX mode\n");
+        NRF_RADIO->TASKS_TXEN = 1;
+        dprintf(SPEW,"Waiting for TXIDLE...\n");
+        while (NRF_RADIO->STATE != RADIO_STATE_STATE_TxIdle);
+        dprintf(SPEW,"In State TxIdle\n");
     }
+
+    uint8_t i;
+
+    //ble_start_beacon( &ble1 );
+
+    while (1) {
+    ble_init_adv_nonconn_ind(&ble1);
+    ble_gatt_add_shortname(&ble1, lkbeacon, 4);
+
+    ble_radio_init_tx(&ble1);
+    radio_dump_packet();
+    dprintf(SPEW,"Starting tx...waiting for tx idle.  state=%d\n",NRF_RADIO->STATE);
+    NRF_RADIO->TASKS_START = 1;
+    while (NRF_RADIO->STATE != RADIO_STATE_STATE_Tx);
+
+    i=0;
+    while (NRF_RADIO->STATE != RADIO_STATE_STATE_TxIdle) {
+        i++;
+        //dprintf(SPEW,"state=%d\n",NRF_RADIO->STATE);
+    }
+    dprintf(SPEW,"%d\n",i);
+
+    ble1.channel = 38;
+    ble_radio_init_tx(&ble1);
+    NRF_RADIO->TASKS_START = 1;
+    i=0;
+    while (NRF_RADIO->STATE != RADIO_STATE_STATE_TxIdle) {
+        i++;
+        //dprintf(SPEW,"state=%d\n",NRF_RADIO->STATE);
+    }
+    dprintf(SPEW,"%d\n",i);
+
+    ble1.channel = 39;
+    ble_radio_init_tx(&ble1);
+    NRF_RADIO->TASKS_START = 1;
+    i=0;
+    while (NRF_RADIO->STATE != RADIO_STATE_STATE_TxIdle) {
+        i++;
+        //dprintf(SPEW,"state=%d\n",NRF_RADIO->STATE);
+    }
+    dprintf(SPEW,"%d\n",i);
+    dprintf(SPEW,"TX complete, all done!\n");
+
+}
+
+
+
 
 
 

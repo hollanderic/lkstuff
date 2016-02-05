@@ -62,6 +62,8 @@ ble_status_t ble_init_adv_nonconn_ind( ble_t *ble_p){
     if (ble_p->state != BLE_IDLE)   //Check if idle, don't want to trash buffer while in flight
         return BLE_ERR_NOT_IDLE;
 
+    ble_p->channel = 37;
+
     ble_p->access_address   = BLE_ACCESSADDRESS_ADVERTISING;
     ble_p->pdu_type         = PDU_ADV_NONCONN_IND;
 

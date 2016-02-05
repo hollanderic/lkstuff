@@ -80,7 +80,7 @@ typedef enum {
 
 #define PDU_TYPE_ADV    0x00
 #define PDU_TYPE_DATA   0x10
-#define PDU_TYPE_MASK   0xf0
+#define PDU_TYPE_MASK   0x0f
 
 typedef enum {
     PDU_ADV_IND = PDU_TYPE_ADV,
@@ -137,11 +137,11 @@ typedef struct {
 
 void ble_initialize(ble_t *ble_p);
 void ble_set_sleepclock_accuracy(ble_t * instance_p, scan_clock_accuracy_t accuracy);
-
+ble_status_t ble_init_adv_nonconn_ind( ble_t *ble_p);
 
 ble_status_t ble_gatt_add_shortname(ble_t *ble_p, uint8_t * str, uint8_t len);
 
-
+void ble_dump_packet(ble_t *ble_p);
 
 ble_status_t ble_go_idle(ble_t *ble_p);
 

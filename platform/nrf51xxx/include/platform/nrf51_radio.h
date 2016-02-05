@@ -30,3 +30,4 @@ typedef struct {
 
 } nrf_packet_buffer_t;
 
+void radio_dump_packet();

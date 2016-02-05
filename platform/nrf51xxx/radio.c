@@ -53,6 +53,18 @@ void nrf51_RADIO_IRQ (void) {
 }
 
 
+void radio_dump_packet(){
+
+
+    printf(" %08x - %08x - %08x -", nrf_packet_buffer.s0, nrf_packet_buffer.length, nrf_packet_buffer.s1);
+    for (int i = 0; i < nrf_packet_buffer.length ; i++)
+        printf("%02x", nrf_packet_buffer.data[i]);
+    printf("\n");
+
+}
+
+
+
 /*
     Initialize the radio to ble mode, place in idle.
     This will perform necessary checks to ensure configuration
@@ -100,7 +112,11 @@ void ble_radio_initialize(ble_t *ble_p) {
 */
 void ble_radio_init_tx(ble_t * ble_p){
 
-    nrf_packet_buffer.s0        = ble_p->pdu_type;
+    nrf_packet_buffer.s0        = ble_p->pdu_type & PDU_TYPE_MASK;
+
+   if (ble_p->hw_addr_type == HW_ADDR_TYPE_RANDOM)
+            nrf_packet_buffer.s0 = nrf_packet_buffer.s0 | 0x40;
+
 // TODO - do we need to factor in the address type in the preamble fields?
 
     nrf_packet_buffer.length    = ble_p->payload_length;
@@ -110,13 +126,24 @@ void ble_radio_init_tx(ble_t * ble_p){
                                             1 << RADIO_PCNF0_S0LEN_Pos | \
                                             2 << RADIO_PCNF0_S1LEN_Pos;
 
-    NRF_RADIO_CAST(ble_p)->BASE0        =   ble_p->access_address & 0x00ffffff;
+    NRF_RADIO_CAST(ble_p)->BASE0        =   (ble_p->access_address << 8) & 0xffffff00;
     NRF_RADIO_CAST(ble_p)->PREFIX0      =   (ble_p->access_address >> 24) & 0xff;
+
     NRF_RADIO_CAST(ble_p)->CRCINIT      =   BLE_CRC_INITIAL_ADV;
     NRF_RADIO_CAST(ble_p)->DATAWHITEIV  =   ble_p->channel;
-    NRF_RADIO_CAST(ble_p)->FREQUENCY    =   (ble_p->channel << 1) + 2;
 
-
+    uint8_t ch;
+    switch (ble_p->channel) {
+        case 37:
+            ch = 0;
+            break;
+        case 38:
+            ch = 12;
+            break;
+        default:
+            ch = ble_p->channel;
+    }
+    NRF_RADIO_CAST(ble_p)->FREQUENCY    =   (ch << 1) + 2;
 }
 
 
@@ -149,7 +176,7 @@ int32_t ble_get_hw_addr(ble_t *ble_p) {
 int32_t ble_radio_set_channel(ble_t * ble_p, uint8_t channel){
 
     NRF_RADIO_CAST(ble_p)->FREQUENCY = (channel << 1) + 2;
-    NRF_RADIO_CAST(ble_p)->DATAWHTIEIV = channel;
+    NRF_RADIO_CAST(ble_p)->DATAWHITEIV = channel;
 
     return 0;
 }
