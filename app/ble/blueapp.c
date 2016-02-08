@@ -56,76 +56,30 @@ void ble_start(void) {
 
 }
 
-
-
-
-
 static int ble_run(void * args)
 {
 
-
-    ble1.radio_handle = (uint32_t *)NRF_RADIO;
-
     ble_initialize( &ble1 );
-
-
- 
-    uint8_t i;
-
-    //ble_start_beacon( &ble1 );
+    ble_init_adv_nonconn_ind(&ble1);
+    ble_gatt_add_flags(&ble1);
+    ble_gatt_add_shortname(&ble1, lkbeacon, sizeof(lkbeacon));
 
     while (1) {
-	    ble_init_adv_nonconn_ind(&ble1);
-	    ble_gatt_add_flags(&ble1);
-	    ble_gatt_add_shortname(&ble1, lkbeacon, 8);
 
-	    
-	    
    		if (NRF_RADIO->STATE == RADIO_STATE_STATE_Disabled) {
-        	
-        	ble1.channel = 37;
-        	radio_dump_packet();
-        	ble_radio_init_tx(&ble1);
-        	dprintf(SPEW,"Radio presently disabled\n");
-        	dprintf(SPEW,"Ramping radio up in TX mode\n");
-        	NRF_RADIO->TASKS_TXEN = 1;
-        	while (NRF_RADIO->STATE != RADIO_STATE_STATE_TxIdle);
-    		// in state tx idle
-		    NRF_RADIO->TASKS_START = 1;
-		    while (NRF_RADIO->STATE != RADIO_STATE_STATE_Tx);
-		    // in state tx
 
-		    while (NRF_RADIO->EVENTS_END == 0);
-		    NRF_RADIO->EVENTS_END = 0;
-		    NRF_RADIO->TASKS_DISABLE = 1;
-		    while (NRF_RADIO->STATE != RADIO_STATE_STATE_Disabled);
+        	ble1.channel = 37;
+        	ble_radio_tx(&ble1);
+		    while (NRF_RADIO->STATE != RADIO_STATE_STATE_Disabled)
 		    dprintf(SPEW,"Packet 1\n");
 
 		    ble1.channel = 38;
-        	ble_radio_init_tx(&ble1);
-        	NRF_RADIO->TASKS_TXEN = 1;
-        	while (NRF_RADIO->STATE != RADIO_STATE_STATE_TxIdle);
-    		// in state tx idle
-		    NRF_RADIO->TASKS_START = 1;
-		    while (NRF_RADIO->STATE != RADIO_STATE_STATE_Tx);
-		    // in state tx
-		    while (NRF_RADIO->EVENTS_END == 0);
-		    NRF_RADIO->EVENTS_END = 0;
-		    NRF_RADIO->TASKS_DISABLE = 1;
+        	ble_radio_tx(&ble1);
 		    while (NRF_RADIO->STATE != RADIO_STATE_STATE_Disabled);
 		    dprintf(SPEW,"Packet 2\n");
 
 		    ble1.channel = 39;
-        	ble_radio_init_tx(&ble1);
-        	NRF_RADIO->TASKS_TXEN = 1;
-        	while (NRF_RADIO->STATE != RADIO_STATE_STATE_TxIdle);
-    		// in state tx idle
-		    NRF_RADIO->TASKS_START = 1;
-		    while (NRF_RADIO->STATE != RADIO_STATE_STATE_Tx);
-		    // in state tx
-		    while (NRF_RADIO->EVENTS_END == 0);
-		    NRF_RADIO->EVENTS_END = 0;
-		    NRF_RADIO->TASKS_DISABLE = 1;
+        	ble_radio_tx(&ble1);
 		    while (NRF_RADIO->STATE != RADIO_STATE_STATE_Disabled);
 		    dprintf(SPEW,"Packet 3\n");
 
@@ -136,10 +90,11 @@ static int ble_run(void * args)
 	return 0;
 }
 
+
 static void ble_init(const struct app_descriptor *app) {
 
 	blethread = thread_create("blethread", &ble_run, NULL, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE);
-	thread_resume(blethread);	
+	thread_resume(blethread);
 }
 
 

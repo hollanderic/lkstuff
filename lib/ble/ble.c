@@ -78,14 +78,8 @@ ble_status_t ble_init_adv_nonconn_ind( ble_t *ble_p){
 
     ble_p->payload_length = 6;
 
-
-    //ble_radio_start_tx(ble_p);
-
-
     return BLE_NO_ERROR;
 }
-
-
 
 uint8_t _ble_remaining_pdu(ble_t *ble_p) {
 
@@ -113,13 +107,10 @@ ble_status_t ble_gatt_add_flags(ble_t * ble_p){
     ble_p->payload.buff[ ble_p->payload_length + 2 ] = 0x06;
     ble_p->payload_length +=3;
 
-
     BLE_UNLOCK(ble_p);
 
     return BLE_NO_ERROR;
-
 }
-
 
 ble_status_t ble_gatt_add_shortname(ble_t *ble_p, uint8_t * str, uint8_t len){
 
@@ -148,14 +139,18 @@ ble_status_t ble_gatt_add_shortname(ble_t *ble_p, uint8_t * str, uint8_t len){
 void ble_initialize( ble_t *ble_p ) {
 
     mutex_init( &(ble_p->lock) );
-    ble_p->payload_length = 0;
-    ble_get_hw_addr( ble_p );
 
-	ble_p->ble_thread = thread_create( "BLE thread", &_ble_run, ble_p, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE );
+    ble_p->payload_length = 0;
 
     ble_radio_initialize( ble_p );
 
-    thread_detach_and_resume(ble_p->ble_thread);
+    ble_get_hw_addr( ble_p );
+
+	//ble_p->ble_thread = thread_create( "BLE thread", &_ble_run, ble_p, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE );
+
+
+
+    //thread_detach_and_resume(ble_p->ble_thread);
 }
 
 

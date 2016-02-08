@@ -73,6 +73,8 @@ void radio_dump_packet(){
 */
 void ble_radio_initialize(ble_t *ble_p) {
 
+    ble_p->radio_handle = (uint32_t *)NRF_RADIO;
+
     NRF_CLOCK->TASKS_HFCLKSTART = 1;    //Start HF xtal oscillator (required for radio)
 
 
@@ -95,11 +97,19 @@ void ble_radio_initialize(ble_t *ble_p) {
     NRF_RADIO_CAST(ble_p)->CRCPOLY      =   BLE_CRC_POLYNOMIAL;
     NRF_RADIO_CAST(ble_p)->TXPOWER      =   RADIO_TXPOWER_TXPOWER_Pos4dBm << RADIO_TXPOWER_TXPOWER_Pos;
     NRF_RADIO_CAST(ble_p)->MODE         =   RADIO_MODE_MODE_Ble_1Mbit << RADIO_MODE_MODE_Pos;
+
+    NRF_RADIO_CAST(ble_p)->PCNF0        =   6 << RADIO_PCNF0_LFLEN_Pos | \
+                                            1 << RADIO_PCNF0_S0LEN_Pos | \
+                                            2 << RADIO_PCNF0_S1LEN_Pos;
+
     NRF_RADIO_CAST(ble_p)->PCNF1        =   255 << RADIO_PCNF1_MAXLEN_Pos   | \
                                             3   << RADIO_PCNF1_BALEN_Pos | \
                                             RADIO_PCNF1_ENDIAN_Little << RADIO_PCNF1_ENDIAN_Pos | \
                                             RADIO_PCNF1_WHITEEN_Enabled << RADIO_PCNF1_WHITEEN_Pos;
-    NRF_RADIO_CAST(ble_p)->TXADDRESS    =   0;
+
+    NRF_RADIO_CAST(ble_p)->BASE0        =   (ble_p->access_address << 8) & 0xffffff00;
+    NRF_RADIO_CAST(ble_p)->PREFIX0      =   (ble_p->access_address >> 24) & 0xff;
+
 
     ble_p->payload.buff = nrf_packet_buffer.data;
 
@@ -110,25 +120,25 @@ void ble_radio_initialize(ble_t *ble_p) {
         This includes channel, whitening init, length fields, etc.
         Assumes that the payload is already laid out in RAM buffer.
 */
-void ble_radio_init_tx(ble_t * ble_p){
+void ble_radio_tx(ble_t * ble_p){
+    //TODO - check channel range
+    //TODO - check payload length
+    //TODO - eliminate use of s1 field (expand length)
+
+    NRF_RADIO_CAST(ble_p)->EVENTS_END   =   0;
+    NRF_RADIO_CAST(ble_p)->EVENTS_READY =   0;
 
     nrf_packet_buffer.s0        = ble_p->pdu_type & PDU_TYPE_MASK;
 
-   if (ble_p->hw_addr_type == HW_ADDR_TYPE_RANDOM)
+    if (ble_p->hw_addr_type == HW_ADDR_TYPE_RANDOM)
             nrf_packet_buffer.s0 = nrf_packet_buffer.s0 | 0x40;
-
-// TODO - do we need to factor in the address type in the preamble fields?
 
     nrf_packet_buffer.length    = ble_p->payload_length;
     nrf_packet_buffer.s1        = 0;
     NRF_RADIO_CAST(ble_p)->PACKETPTR    =   (uint32_t )&nrf_packet_buffer;
-    NRF_RADIO_CAST(ble_p)->PCNF0        =   6 << RADIO_PCNF0_LFLEN_Pos | \
-                                            1 << RADIO_PCNF0_S0LEN_Pos | \
-                                            2 << RADIO_PCNF0_S1LEN_Pos;
-
     NRF_RADIO_CAST(ble_p)->BASE0        =   (ble_p->access_address << 8) & 0xffffff00;
     NRF_RADIO_CAST(ble_p)->PREFIX0      =   (ble_p->access_address >> 24) & 0xff;
-
+    NRF_RADIO_CAST(ble_p)->TXADDRESS    =   0;
     NRF_RADIO_CAST(ble_p)->CRCINIT      =   BLE_CRC_INITIAL_ADV;
     NRF_RADIO_CAST(ble_p)->DATAWHITEIV  =   ble_p->channel;
 
@@ -144,11 +154,15 @@ void ble_radio_init_tx(ble_t * ble_p){
             ch = ble_p->channel;
     }
     NRF_RADIO_CAST(ble_p)->FREQUENCY    =   (ch << 1) + 2;
+    NRF_RADIO_CAST(ble_p)->SHORTS       =   RADIO_SHORTS_READY_START_Enabled << RADIO_SHORTS_READY_START_Pos | \
+                                            RADIO_SHORTS_END_DISABLE_Enabled << RADIO_SHORTS_END_DISABLE_Pos;
+
+    NRF_RADIO_CAST(ble_p)->TASKS_TXEN   =   1;
 }
 
 
-void ble_radio_start_rx(ble_t * ble_p){
 
+void ble_radio_start_rx(ble_t * ble_p){
 
 
 }
