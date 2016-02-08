@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Eric Holland
+ * Copyright (c) 2016 Eric Holland
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files
@@ -101,6 +101,26 @@ ble_status_t ble_go_idle(ble_t *ble_p){
     return BLE_NO_ERROR;
 }
 
+ble_status_t ble_gatt_add_flags(ble_t * ble_p){
+   BLE_CHECK_AND_LOCK(ble_p);
+
+    if ( _ble_remaining_pdu(ble_p) < 3 ){
+        BLE_UNLOCK(ble_p);
+        return BLE_ERR_PDU_FULL;
+    }
+    ble_p->payload.buff[ ble_p->payload_length     ] = 2;
+    ble_p->payload.buff[ ble_p->payload_length + 1 ] = GAP_ADTYPE_FLAGS;
+    ble_p->payload.buff[ ble_p->payload_length + 2 ] = 0x06;
+    ble_p->payload_length +=3;
+
+
+    BLE_UNLOCK(ble_p);
+
+    return BLE_NO_ERROR;
+
+}
+
+
 ble_status_t ble_gatt_add_shortname(ble_t *ble_p, uint8_t * str, uint8_t len){
 
     BLE_CHECK_AND_LOCK(ble_p);
@@ -109,9 +129,8 @@ ble_status_t ble_gatt_add_shortname(ble_t *ble_p, uint8_t * str, uint8_t len){
         BLE_UNLOCK(ble_p);
         return BLE_ERR_PDU_FULL;
     }
-    ble_p->payload.buff[ ble_p->payload_length    ] = GAP_ADTYPE_LOCAL_NAME_SHORT;
-    ble_p->payload.buff[ ble_p->payload_length + 1] = len;
-
+    ble_p->payload.buff[ ble_p->payload_length     ] = len + 1;
+    ble_p->payload.buff[ ble_p->payload_length + 1 ] = GAP_ADTYPE_LOCAL_NAME_SHORT;
     ble_p->payload_length +=2;
 
     for (int i=0 ; i < len ; i++) {

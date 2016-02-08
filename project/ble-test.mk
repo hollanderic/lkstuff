@@ -1,5 +1,6 @@
 MODULES += \
 	app/shell \
+	app/ble
 
 
 

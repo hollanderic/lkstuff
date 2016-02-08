@@ -138,7 +138,7 @@ typedef struct {
 void ble_initialize(ble_t *ble_p);
 void ble_set_sleepclock_accuracy(ble_t * instance_p, scan_clock_accuracy_t accuracy);
 ble_status_t ble_init_adv_nonconn_ind( ble_t *ble_p);
-
+ble_status_t ble_gatt_add_flags(ble_t * ble_p);
 ble_status_t ble_gatt_add_shortname(ble_t *ble_p, uint8_t * str, uint8_t len);
 
 void ble_dump_packet(ble_t *ble_p);

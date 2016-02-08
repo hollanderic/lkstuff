@@ -47,7 +47,8 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/vectab.c \
 	$(LOCAL_DIR)/gpio.c \
     $(LOCAL_DIR)/timer.c \
-	$(LOCAL_DIR)/system_nrf51.c
+	$(LOCAL_DIR)/system_nrf51.c \
+	$(LOCAL_DIR)/radio.c \
 
 
 LINKER_SCRIPT += \
