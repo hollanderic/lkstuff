@@ -26,6 +26,7 @@
 #include <err.h>
 #include <kernel/thread.h>
 #include <kernel/mutex.h>
+#include <kernel/event.h>
 
 
 
@@ -70,7 +71,6 @@ typedef enum {
 
     BLE_IDLE,
     BLE_ADVERTISING,
-    BLE_BEACONING,
     BLE_SCANNING,
     BLE_CONNECTED,
 
@@ -118,8 +118,8 @@ typedef union {
 */
 typedef struct {
     thread_t        *ble_thread;
-    uint32_t        *radio_handle;
     mutex_t         lock;
+    event_t         *radio_event;
     ble_state_t     state;
     uint32_t        interval;
     uint32_t        crc_init;           // CRC initialization value for the link

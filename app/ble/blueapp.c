@@ -32,6 +32,8 @@
 #include <dev/ble_radio.h>
 
 
+//   UUID  - 080223be-181a-4f59-b74a-ea5d04af35bc
+
 void ble_start(void);
 static void ble_init(const struct app_descriptor *app);
 
@@ -65,25 +67,19 @@ static int ble_run(void * args)
     ble_gatt_add_shortname(&ble1, lkbeacon, sizeof(lkbeacon));
 
     while (1) {
+        //if ( mutex_acquire_timeout(&(ble_p->lock),0) == NO_ERROR )
 
    		if (NRF_RADIO->STATE == RADIO_STATE_STATE_Disabled) {
 
         	ble1.channel = 37;
         	ble_radio_tx(&ble1);
-		    while (NRF_RADIO->STATE != RADIO_STATE_STATE_Disabled)
-		    dprintf(SPEW,"Packet 1\n");
 
 		    ble1.channel = 38;
         	ble_radio_tx(&ble1);
-		    while (NRF_RADIO->STATE != RADIO_STATE_STATE_Disabled);
-		    dprintf(SPEW,"Packet 2\n");
 
 		    ble1.channel = 39;
         	ble_radio_tx(&ble1);
-		    while (NRF_RADIO->STATE != RADIO_STATE_STATE_Disabled);
-		    dprintf(SPEW,"Packet 3\n");
 
-		    dprintf(SPEW,"TX complete, all done!\n");
 	    }
 	    thread_sleep(1000);
 	}
@@ -93,7 +89,7 @@ static int ble_run(void * args)
 
 static void ble_init(const struct app_descriptor *app) {
 
-	blethread = thread_create("blethread", &ble_run, NULL, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE);
+	blethread = thread_create("blethread", &ble_run, NULL, HIGH_PRIORITY, DEFAULT_STACK_SIZE);
 	thread_resume(blethread);
 }
 
