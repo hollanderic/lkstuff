@@ -69,18 +69,18 @@ static int ble_run(void * args)
     while (1) {
         //if ( mutex_acquire_timeout(&(ble_p->lock),0) == NO_ERROR )
 
-   		if (NRF_RADIO->STATE == RADIO_STATE_STATE_Disabled) {
+   			switch(ble1.state) {
 
-        	ble1.channel = 37;
-        	ble_radio_tx(&ble1);
+        		ble1.channel = 37;
+        		ble_radio_tx(&ble1);
 
-		    ble1.channel = 38;
-        	ble_radio_tx(&ble1);
+		    	ble1.channel = 38;
+        		ble_radio_tx(&ble1);
 
-		    ble1.channel = 39;
-        	ble_radio_tx(&ble1);
+		    	ble1.channel = 39;
+        		ble_radio_tx(&ble1);
+        	}
 
-	    }
 	    thread_sleep(1000);
 	}
 	return 0;

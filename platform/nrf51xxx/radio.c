@@ -149,10 +149,10 @@ void ble_radio_tx(ble_t * ble_p){
     NRF_RADIO->PREFIX0      =   (ble_p->access_address >> 24) & 0xff;
     NRF_RADIO->TXADDRESS    =   0;
     NRF_RADIO->CRCINIT      =   BLE_CRC_INITIAL_ADV;
-    NRF_RADIO->DATAWHITEIV  =   ble_p->channel;
+    NRF_RADIO->DATAWHITEIV  =   ble_p->channel_index;
 
     uint8_t ch;
-    switch (ble_p->channel) {
+    switch (ble_p->channel_index) {
         case 37:
             ch = 0;
             break;
@@ -160,7 +160,7 @@ void ble_radio_tx(ble_t * ble_p){
             ch = 12;
             break;
         default:
-            ch = ble_p->channel;
+            ch = ble_p->channel_index;
     }
     NRF_RADIO->FREQUENCY    =   (ch << 1) + 2;
     NRF_RADIO->SHORTS       =   RADIO_SHORTS_READY_START_Enabled << RADIO_SHORTS_READY_START_Pos | \

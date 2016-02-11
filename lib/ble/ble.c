@@ -74,7 +74,7 @@ ble_status_t ble_init_adv_nonconn_ind( ble_t *ble_p){
 
     ble_p->payload_length = 6;
 
-    return BLE_NO_ERROR
+    return BLE_NO_ERROR;
 }
 
 uint8_t _ble_remaining_pdu(ble_t *ble_p) {
@@ -143,10 +143,9 @@ void ble_initialize( ble_t *ble_p ) {
     ble_get_hw_addr( ble_p );
 
 	//ble_p->ble_thread = thread_create( "BLE thread", &_ble_run, ble_p, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE );
-
-
-
     //thread_detach_and_resume(ble_p->ble_thread);
+
+    ble_p->state = BLE_IDLE;
 }
 
 

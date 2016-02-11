@@ -122,9 +122,8 @@ typedef struct {
     event_t         *radio_event;
     ble_state_t     state;
     uint32_t        interval;
-    uint32_t        crc_init;           // CRC initialization value for the link
-    uint8_t         channel;
-    uint32_t        access_address;
+    uint8_t         channel_index;      //Might want to eliminate
+    uint32_t        access_address;     //Might want to eliminate
     uint8_t         hw_addr[6];
     ble_addr_type_t hw_addr_type;
     pdu_type_t      pdu_type;
