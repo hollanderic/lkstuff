@@ -150,12 +150,14 @@ static const uint8_t lut_kwg[512] = {
 #if WITH_LIB_CONSOLE
 #include <lib/console.h>
 
+
 spin_lock_t lock;
 spin_lock_saved_state_t state;
 
 
 
 static bool _poll_gpio(uint32_t gpio, bool desired, uint8_t timeout)
+
 {
     lk_time_t now = current_time();
     uint32_t current;
@@ -184,12 +186,12 @@ static inline void _release_reset(eink_t * disp_p) {
 
 
 void _write_cmd(eink_t * disp_p, uint8_t cmd) {
+
     uint16_t cmd16;
 
     cmd16 = (uint16_t) cmd;
     spi_write(&SpiHandle, (uint8_t *)&cmd16,1, get_cs_pin(disp_p));
 }
-
 
 
 void write_data(uint8_t disp_p, const uint8_t *buf, size_t len) {
