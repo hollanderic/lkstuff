@@ -10,14 +10,14 @@
 #define EINK_BLACK      0x00
 
 
+#define EINK_BUSY_TIMEOUT 3000
+
 typedef struct {
-    uint32_t    spi;
+    uint32_t    spi_handle;
     uint32_t    cs_gpio;
     uint32_t    busy_gpio;
-    uint32_t    rst_gpio
+    uint32_t    rst_gpio;
     bool        with_busy;
-    bool        spi_inited;
-    spin_lock_t spi_lock;
     uint8_t *   framebuff_p;
 } eink_t;
 

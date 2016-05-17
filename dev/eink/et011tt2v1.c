@@ -147,8 +147,8 @@ static const uint8_t lut_kwg[512] = {
 /* cja: end of imported LUTs */
 #define LOCAL_TRACE 0
 
-#if WITH_LIB_CONSOLE
-#include <lib/console.h>
+
+
 
 spin_lock_t lock;
 spin_lock_saved_state_t state;
@@ -156,6 +156,7 @@ spin_lock_saved_state_t state;
 
 
 static bool _poll_gpio(uint32_t gpio, bool desired, uint8_t timeout)
+
 {
     lk_time_t now = current_time();
     uint32_t current;
@@ -170,8 +171,12 @@ static bool _poll_gpio(uint32_t gpio, bool desired, uint8_t timeout)
 }
 
 /* The display pulls the BUSY line low while BUSY and releases it when done */
-static bool _check_busy(eink_t * disp_p) {
-    return _poll_gpio(disp_p->busy_gpio);
+static bool _wait_not_busy(eink_t * disp_p) {
+    if (disp_p->with_busy) {
+        return _poll_gpio(disp_p->busy_gpio,1,EINK_BUSY_TIMEOUT);
+    } else {
+        return true;
+    }
 }
 
 static inline void _assert_reset(eink_t * disp_p) {
@@ -184,51 +189,30 @@ static inline void _release_reset(eink_t * disp_p) {
 
 
 void _write_cmd(eink_t * disp_p, uint8_t cmd) {
-    uint16_t cmd16;
 
+    uint16_t cmd16;
     cmd16 = (uint16_t) cmd;
-    spi_write(&SpiHandle, (uint8_t *)&cmd16,1, get_cs_pin(disp_p));
+    spi_write16(disp_p->spi_handle, &cmd16, 1 , disp_p->cs_gpio); //Since we are 9-bin transfers, need to send as 16bit val
 }
 
+void _write_data(eink_t * disp_p, uint8_t * buf, size_t len) {
 
-
-void write_data(uint8_t disp_p, const uint8_t *buf, size_t len) {
-    //set_data_parameter_mode();
     uint16_t txbyte;
-    //enter_critical_section;
-    //spin_lock_irqsave(&lock, state);
+
     for (size_t i = 0; i < len; i++) {
         txbyte = ((uint16_t) buf[i]) | 0x0100;
-        spi_write(&SpiHandle, (uint8_t *)&txbyte,1, get_cs_pin(disp_p));
+        spi_write16(disp_p->spi_handle, (uint8_t *)&txbyte,1, disp_p->cs_gpio);
     }
-    //spin_unlock_irqrestore(&lock, state);
-    //exit_critical_section;
 }
 
-void _write_param(uint8_t disp_p, uint8_t param) {
+void _write_param(eink_t * disp_p, uint8_t param) {
 
     uint16_t data16;
     data16 = (uint16_t) param | 0x0100;
-    spi_write(&SpiHandle, (uint8_t *)&data16,1, get_cs_pin(disp_p));
-    //printf("%x\n",get_cs_pin(disp_p));
+    spi_write16(disp_p->spi_handle, (uint8_t *)&data16,1, disp_p->cs_gpio);
 }
 
-
-
-void write_burst_data(uint8_t *buf, size_t len) {
-    //enter_critical_section;
-    int chunk = 256;
-    spin_lock_irqsave(&lock, state);
-    gpio_set(GPIO_DISP0_CS, 0);
-    for (size_t off = 0; off < len; off += chunk) {
-        spi_write(&SpiHandle, buf + off, chunk, 0);
-    }
-    gpio_set(GPIO_DISP0_CS, 1);
-    spin_unlock_irqrestore(&lock, state);
-    //exit_critical_section;
-}
-
-status_t read_data(uint8_t *buf, size_t len) {
+/*status_t read_data(uint8_t *buf, size_t len) {
     return spi_read(&SpiHandle, buf, len, GPIO_DISP0_CS);
 }
 
@@ -244,16 +228,17 @@ status_t get_status(et011tt2_status_t *status) {
 
     return err;
 }
+*/
 
 status_t eink_disp_init(eink_t * disp_p){
 
     TRACE_ENTRY;
     status_t err = NO_ERROR;
 
-    //if (!check_busy(disp_p)) {
-    //    printf("Device %d is still busy after initial reset!\n",disp_p);
-    //    return ERR_GENERIC;
-    //}
+    if (!_wait_not_busy(disp_p)) {
+        printf("Device %d is still busy after initial reset!\n",disp_p);
+        return ERR_GENERIC;
+    }
 
 
     // Configure power settings
@@ -332,8 +317,7 @@ err:
 status_t eink_init(eink_t * disp_p) {
     TRACE_ENTRY;
     status_t err = NO_ERROR;
-    spin_lock_init(&disp_p->spi_lock);
-
+/*
     if (!disp_p->spi_inited) {
         SpiHandle.Instance               = disp_p->spi;
         SpiHandle.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
@@ -354,13 +338,12 @@ status_t eink_init(eink_t * disp_p) {
         }
         disp_p->spi_inited = true;
     }
-
+*/
     // VDD (wired straight to 3v3)
     spin(2000);         // Delay 2 ms
     assert_reset();     // RST_LOW
     spin(30);           // Delay 30 us
     release_reset();    // RST_HIGH
-    
     _eink_disp_init(disp_p);
 
 err:
@@ -368,92 +351,57 @@ err:
     return err;
 }
 
+static int _eink_startdatawindow(eink_t * disp_p) {
+    _write_cmd(disp_p, DataStartTransmissionWindow);
+    _write_param(disp_p, 0x00);
+    _write_param(disp_p, 0x00);
+    _write_param(disp_p, 0x00);
+    _write_param(disp_p,  (HRES -1) | 0x03 );
+    _write_param(disp_p,  (VRES -1) >> 8 );
+    _write_param(disp_p,  (VRES -1) & 0xff);
+    return 0; 
+}
+static int _eink_displayrefresh(eink_t * disp_p) {
+    _write_cmd(disp_p, DisplayRefresh);
+    _write_param(disp_p, 0x00);
+    _write_param(disp_p, 0x00);
+    _write_param(disp_p, 0x00);
+    _write_param(disp_p, 0x00);
+    _write_param(disp_p,  (HRES -1) | 0x03 );
+    _write_param(disp_p,  (VRES -1) >> 8 );
+    _write_param(disp_p,  (VRES -1) & 0xff);
+    return 0;
+}
 
 static int _eink_dumpfb(eink_t * disp_p)
 {
-    if (disp_p->spi_inited) {
-        // DTMW
-        _write_cmd(disp_p, DataStartTransmissionWindow);
-        _write_param(disp_p, 0x00);
-        _write_param(disp_p, 0x00);
-        _write_param(disp_p, 0x00);
-        _write_param(disp_p,  (HRES -1) | 0x03 );
-        _write_param(disp_p,  (VRES -1) >> 8 );
-        _write_param(disp_p,  (VRES -1) & 0xff);
+    if (disp_p->frame_buff) {
 
-        // DTM2
+        _eink_startdatawindow(disp_p);
+
         _write_cmd(disp_p, DataStartTransmission2);
         _write_data(disp_p, disp_p->frame_buff, FBSIZE);
 
-        // DRF
-        _write_cmd(disp_p, DisplayRefresh);
-        _write_param(disp_p, 0x00);
-        _write_param(disp_p, 0x00);
-        _write_param(disp_p, 0x00);
-        _write_param(disp_p, 0x00);
-        _write_param(disp_p,  (HRES -1) | 0x03 );
-        _write_param(disp_p,  (VRES -1) >> 8 );
-        _write_param(disp_p,  (VRES -1) & 0xff);
+        _eink_displayrefresh(disp_p);
+
         return 0;
-    }
+   }
     return -1;
 }
 
+static int _eink_drawimagebuff(eink_t * disp_p, uint8_t * buff){
+    if (buff) {
 
-eink_t disp;
+        _eink_startdatawindow(disp_p);
 
-static int cmd_eink_fill(int argc, const cmd_args *argv)
-{
-    uint16_t x,y,count,val;
+        _write_cmd(disp_p, DataStartTransmission2);
+        _write_data(disp_p, buff, FBSIZE);
 
-    if !(disp->frame_buff==NULL) {
-        x = argv[1].i;
-        y = argv[2].i;
-        val = argv[3].i;
-        count = argv[4].i;
+        _eink_displayrefresh(disp_p);
 
-        memset(disp->frame_buff + x + y*(240>>2), val,count);
-
-        return _eink_dumpfb(&disp);
-    } else {
-        return -1;
-    }
-}
-
-
-
-
-
-
-static int cmd_eink1(int argc, const cmd_args *argv)
-{
-    memset(framebuffer, 0xff, FBSIZE);
-    eink_dumpfb(0,framebuffer,FBSIZE);
-    eink_dumpfb(1,framebuffer,FBSIZE);
-    return 0;
-}
-
-static int cmd_eink0(int argc, const cmd_args *argv)
-{
-    memset(framebuffer, 0x00, sizeof(framebuffer));
-    eink_dumpfb(0,framebuffer,FBSIZE);
-    eink_dumpfb(1,framebuffer,FBSIZE);
-    return 0;
-}
-
-int eink_refresh(uint8_t disp_p) {
-    return eink_dumpfb(disp_p,framebuffer,FBSIZE);
-}
-
-static int cmd_eink_logo(int argc, const cmd_args *argv)
-{
-    eink_dumpfb(0,logo,sizeof(logo));
-    return eink_dumpfb(1,logo,sizeof(logo));
-}
-
-static int cmd_eink(int argc, const cmd_args *argv)
-{
-    return eink_init();
+        return 0;
+   }
+    return -1;
 }
 
 uint8_t * get_eink_framebuffer(void) {
@@ -525,6 +473,61 @@ status_t display_get_info(struct display_info *info)
     info->height = HRES;
 
     return NO_ERROR;
+}
+
+
+
+
+#if WITH_LIB_CONSOLE
+#include <lib/console.h>
+
+eink_t disp;
+
+static int cmd_eink_fill(int argc, const cmd_args *argv)
+{
+    uint16_t x,y,count,val;
+
+    if !(disp->frame_buff==NULL) {
+        x = argv[1].i;
+        y = argv[2].i;
+        val = argv[3].i;
+        count = argv[4].i;
+        memset(disp->frame_buff + x + y*(240>>2), val,count);
+        return _eink_dumpfb(&disp);
+
+    } else {
+        return -1;
+    }
+}
+
+static int cmd_eink1(int argc, const cmd_args *argv)
+{
+    memset(disp->frame_buff, 0xff, FBSIZE);
+    return _eink_dumpfb(&disp);
+
+}
+
+static int cmd_eink0(int argc, const cmd_args *argv)
+{
+    memset(disp->frame_buff, 0x00, FBSIZE);
+    return _eink_dumpfb(&disp);
+}
+
+int eink_refresh(uint8_t disp_p) {
+    return _eink_dumpfb(&disp);
+}
+
+static int cmd_eink_logo(int argc, const cmd_args *argv)
+{
+    eink_dumpfb(0,logo,sizeof(logo));
+
+    return _eink_drawimagebuff(&disp,logo);
+}
+
+
+static int cmd_eink(int argc, const cmd_args *argv)
+{
+    return eink_init($disp);
 }
 
 
