@@ -29,6 +29,7 @@
 #include <dev/gpio.h>
 #include <dev/usb.h>
 #include <dev/accelerometer.h>
+#include <dev/display.h>
 #include <platform/stm32.h>
 #include <platform/sdram.h>
 #include <platform/gpio.h>
@@ -174,6 +175,7 @@ void target_init(void)
 #if ENABLE_SENSORBUS
     sensor_bus_init();
 #endif
+    display_init(NULL);
 }
 
 void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi)

@@ -4,17 +4,16 @@
 #include <rand.h>
 #include <stdlib.h>
 #include <trace.h>
-#include <dev/display.h>
 #include <platform/timer.h>
 #include <platform/gpio.h>
 #include <target/gpioconfig.h>
 #include <target/tqlogo.h>
-#include <target/et011tt2v1.h>
+#include <dev/et011tt2v1.h>
+#include <target/spi.h>
 #include <string.h>
 // TODO The eink driver should not include stm headers. We likely need INIT to store
 // a spihandle and then spi functions use it some other way
 #include <stm32f7xx.h>
-#include <platform/spi.h>
 #include <platform.h>
 
 /* The following tables are copied verbatim with comments from the verily driver */
@@ -155,7 +154,7 @@ spin_lock_saved_state_t state;
 
 
 
-static bool _poll_gpio(uint32_t gpio, bool desired, uint8_t timeout)
+static bool _poll_gpio(uint32_t gpio, bool desired, uint32_t timeout)
 
 {
     lk_time_t now = current_time();
@@ -192,16 +191,34 @@ void _write_cmd(eink_t * disp_p, uint8_t cmd) {
 
     uint16_t cmd16;
     cmd16 = (uint16_t) cmd;
-    spi_write16(disp_p->spi_handle, &cmd16, 1 , disp_p->cs_gpio); //Since we are 9-bin transfers, need to send as 16bit val
+    spi_write(disp_p->spi_handle,(uint8_t *)&cmd16, 1 , disp_p->cs_gpio); //Since we are 9-bin transfers, need to send as 16bit val
 }
 
-void _write_data(eink_t * disp_p, uint8_t * buf, size_t len) {
+
+/* _write_byte_data assumes the image buffer contains 8 bit per pixel information, must be repacked as 2bit (4 pixel per byte) */
+
+void _write_byte_data(eink_t * disp_p, const uint8_t * buf, size_t len) {
+
+    uint16_t txbyte;
+
+
+    for (size_t i = 0; i < (len>>2); i++) {
+        txbyte = ((uint16_t) (buf[4*i     ] & 0x03) << 6) | 
+                 ((uint16_t) (buf[4*i + 1 ] & 0x03) << 4) | 
+                 ((uint16_t) (buf[4*i + 2 ] & 0x03) << 2) | 
+                 ((uint16_t) (buf[4*i + 3 ] & 0x03) << 0) | 0x0100;
+        spi_write(disp_p->spi_handle, (uint8_t *)&txbyte,1, disp_p->cs_gpio);
+    }
+}
+
+
+void _write_data(eink_t * disp_p, const uint8_t * buf, size_t len) {
 
     uint16_t txbyte;
 
     for (size_t i = 0; i < len; i++) {
         txbyte = ((uint16_t) buf[i]) | 0x0100;
-        spi_write16(disp_p->spi_handle, (uint8_t *)&txbyte,1, disp_p->cs_gpio);
+        spi_write((void *)disp_p->spi_handle, (uint8_t *)&txbyte,1, disp_p->cs_gpio);
     }
 }
 
@@ -209,7 +226,7 @@ void _write_param(eink_t * disp_p, uint8_t param) {
 
     uint16_t data16;
     data16 = (uint16_t) param | 0x0100;
-    spi_write16(disp_p->spi_handle, (uint8_t *)&data16,1, disp_p->cs_gpio);
+    spi_write((void *)disp_p->spi_handle, (uint8_t *)&data16,1, disp_p->cs_gpio);
 }
 
 /*status_t read_data(uint8_t *buf, size_t len) {
@@ -230,13 +247,15 @@ status_t get_status(et011tt2_status_t *status) {
 }
 */
 
+
+
 status_t eink_disp_init(eink_t * disp_p){
 
     TRACE_ENTRY;
     status_t err = NO_ERROR;
 
     if (!_wait_not_busy(disp_p)) {
-        printf("Device %d is still busy after initial reset!\n",disp_p);
+        printf("Device is still busy after initial reset!\n");
         return ERR_GENERIC;
     }
 
@@ -289,13 +308,13 @@ status_t eink_disp_init(eink_t * disp_p){
     _write_param(disp_p, 0x02);
 
     _write_cmd(disp_p, FtLutRegister);
-    write_data(disp_p, lut_ft, sizeof(lut_ft));
+    _write_data(disp_p, lut_ft, sizeof(lut_ft));
 
     _write_cmd(disp_p, KwgVcomLutRegister);
-    write_data(disp_p, lut_kwg_vcom, sizeof(lut_kwg_vcom));
+    _write_data(disp_p, lut_kwg_vcom, sizeof(lut_kwg_vcom));
 
     _write_cmd(disp_p, KwgLutRegister);
-    write_data(disp_p, lut_kwg, sizeof(lut_kwg));
+    _write_data(disp_p, lut_kwg, sizeof(lut_kwg));
 
     _write_cmd(disp_p, VcomDcSetting);
     _write_param(disp_p, 0x22);
@@ -341,10 +360,10 @@ status_t eink_init(eink_t * disp_p) {
 */
     // VDD (wired straight to 3v3)
     spin(2000);         // Delay 2 ms
-    assert_reset();     // RST_LOW
+    _assert_reset(disp_p);     // RST_LOW
     spin(30);           // Delay 30 us
-    release_reset();    // RST_HIGH
-    _eink_disp_init(disp_p);
+    _release_reset(disp_p);    // RST_HIGH
+    eink_disp_init(disp_p);
 
 err:
     TRACE_EXIT;
@@ -356,9 +375,9 @@ static int _eink_startdatawindow(eink_t * disp_p) {
     _write_param(disp_p, 0x00);
     _write_param(disp_p, 0x00);
     _write_param(disp_p, 0x00);
-    _write_param(disp_p,  (HRES -1) | 0x03 );
-    _write_param(disp_p,  (VRES -1) >> 8 );
-    _write_param(disp_p,  (VRES -1) & 0xff);
+    _write_param(disp_p,  (EINK_HRES -1) | 0x03 );
+    _write_param(disp_p,  (EINK_VRES -1) >> 8 );
+    _write_param(disp_p,  (EINK_VRES -1) & 0xff);
     return 0; 
 }
 static int _eink_displayrefresh(eink_t * disp_p) {
@@ -367,20 +386,20 @@ static int _eink_displayrefresh(eink_t * disp_p) {
     _write_param(disp_p, 0x00);
     _write_param(disp_p, 0x00);
     _write_param(disp_p, 0x00);
-    _write_param(disp_p,  (HRES -1) | 0x03 );
-    _write_param(disp_p,  (VRES -1) >> 8 );
-    _write_param(disp_p,  (VRES -1) & 0xff);
+    _write_param(disp_p,  (EINK_HRES -1) | 0x03 );
+    _write_param(disp_p,  (EINK_VRES -1) >> 8 );
+    _write_param(disp_p,  (EINK_VRES -1) & 0xff);
     return 0;
 }
 
-static int _eink_dumpfb(eink_t * disp_p)
+int eink_dumpfb(eink_t * disp_p)
 {
-    if (disp_p->frame_buff) {
+    if (disp_p->framebuff) {
 
         _eink_startdatawindow(disp_p);
 
         _write_cmd(disp_p, DataStartTransmission2);
-        _write_data(disp_p, disp_p->frame_buff, FBSIZE);
+        _write_byte_data(disp_p, disp_p->framebuff, EINK_FBSIZE);
 
         _eink_displayrefresh(disp_p);
 
@@ -388,14 +407,14 @@ static int _eink_dumpfb(eink_t * disp_p)
    }
     return -1;
 }
-
-static int _eink_drawimagebuff(eink_t * disp_p, uint8_t * buff){
+/* eink_drawimagebuff assumes the buffer contains 2 bit per pixel data */
+int eink_drawimagebuff(eink_t * disp_p, uint8_t * buff){
     if (buff) {
 
         _eink_startdatawindow(disp_p);
 
         _write_cmd(disp_p, DataStartTransmission2);
-        _write_data(disp_p, buff, FBSIZE);
+        _write_data(disp_p, buff, EINK_FBSIZE);
 
         _eink_displayrefresh(disp_p);
 
@@ -404,143 +423,14 @@ static int _eink_drawimagebuff(eink_t * disp_p, uint8_t * buff){
     return -1;
 }
 
-uint8_t * get_eink_framebuffer(void) {
-    return framebuffer;
-}
-
-static struct display_framebuffer eink_framebuffer;
-
-static uint8_t clamp_px(uint8_t px)
-{
-    if (px) return 0x3;
-    return 0x0;
-}
-
-status_t display_present(struct display_image *image, uint starty, uint endy)
-{
-    DEBUG_ASSERT(image);
-
-    // Convert the framebuffer into something that the e-ink display will
-    // understand.
-    // TODO(gkalsi): Note that we're ignoring starty and endy right now. Just
-    //               dump the whole display for now and we can worry about
-    //               partial updates later.
-
-    // memset(framebuffer, 0, FBSIZE);
-    uint8_t *fb = (uint8_t *)framebuffer;
-    uint8_t *px = (uint8_t *)image->pixels;
-    for (unsigned int col = 0; col < 60; col++) {
-        for (unsigned int row = 0; row < 240; row++) {
-            fb[col + row * 60]  = clamp_px((px[col * 2 + row * 120] & 0xC0) >> 6) << 4;
-            fb[col + row * 60] |= clamp_px((px[col * 2 + row * 120] & 0x0C) >> 2) << 6;
-            fb[col + row * 60] |= clamp_px((px[col * 2 + row * 120 + 1] & 0xC0) >> 6);
-            fb[col + row * 60] |= clamp_px((px[col * 2 + row * 120 + 1] & 0x0C) >> 2) << 2;
-        }
-    }
-
-    return eink_dumpfb(0,framebuffer, FBSIZE);
-}
-
-static void eink_flush(uint starty, uint endy)
-{
-    display_present(&eink_framebuffer.image, starty, endy);
-}
-
-status_t display_get_framebuffer(struct display_framebuffer *fb)
-{
-    DEBUG_ASSERT(fb);
-    // Build the framebuffer.
-
-    eink_framebuffer.image.format = IMAGE_FORMAT_MONO_8;
-    eink_framebuffer.image.stride = HRES;
-    eink_framebuffer.image.rowbytes = HRES;
-
-    eink_framebuffer.image.pixels = malloc(HRES * VRES);
-    eink_framebuffer.image.width = HRES;
-    eink_framebuffer.image.height = HRES;
-    eink_framebuffer.flush = eink_flush;
-    eink_framebuffer.format = DISPLAY_FORMAT_RGB_111;   // TODO(gkalsi): This is not RGB, we're lying
-    *fb = eink_framebuffer;
-    return NO_ERROR;
-}
-
-status_t display_get_info(struct display_info *info)
-{
-    DEBUG_ASSERT(info);
-
-    info->format = IMAGE_FORMAT_MONO_8;
-    info->width = HRES;
-    info->height = HRES;
-
-    return NO_ERROR;
+int eink_refresh(eink_t * disp_p) {
+    return eink_dumpfb(disp_p);
 }
 
 
-
-
-#if WITH_LIB_CONSOLE
-#include <lib/console.h>
-
-eink_t disp;
-
-static int cmd_eink_fill(int argc, const cmd_args *argv)
-{
-    uint16_t x,y,count,val;
-
-    if !(disp->frame_buff==NULL) {
-        x = argv[1].i;
-        y = argv[2].i;
-        val = argv[3].i;
-        count = argv[4].i;
-        memset(disp->frame_buff + x + y*(240>>2), val,count);
-        return _eink_dumpfb(&disp);
-
-    } else {
-        return -1;
-    }
+uint8_t * get_eink_framebuffer(eink_t * disp_p) {
+    return disp_p->framebuff;
 }
-
-static int cmd_eink1(int argc, const cmd_args *argv)
-{
-    memset(disp->frame_buff, 0xff, FBSIZE);
-    return _eink_dumpfb(&disp);
-
-}
-
-static int cmd_eink0(int argc, const cmd_args *argv)
-{
-    memset(disp->frame_buff, 0x00, FBSIZE);
-    return _eink_dumpfb(&disp);
-}
-
-int eink_refresh(uint8_t disp_p) {
-    return _eink_dumpfb(&disp);
-}
-
-static int cmd_eink_logo(int argc, const cmd_args *argv)
-{
-    eink_dumpfb(0,logo,sizeof(logo));
-
-    return _eink_drawimagebuff(&disp,logo);
-}
-
-
-static int cmd_eink(int argc, const cmd_args *argv)
-{
-    return eink_init($disp);
-}
-
-
-STATIC_COMMAND_START
-STATIC_COMMAND("eink", "eink init", &cmd_eink)
-STATIC_COMMAND("eink1", "eink fill white", &cmd_eink1)
-STATIC_COMMAND("eink0", "eink fill black", &cmd_eink0)
-STATIC_COMMAND("einkfill", "eink fill x y val count", &cmd_eink_fill)
-STATIC_COMMAND("einklogo", "tqlogo", &cmd_eink_logo)
-STATIC_COMMAND_END(eink);
-
-#endif
-
 
 
 

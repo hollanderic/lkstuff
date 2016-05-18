@@ -4,7 +4,9 @@
 
 #define EINK_HRES	240
 #define	EINK_VRES	240
-#define EINK_FBSIZE  EINK_HRES*EINK_VRES>>2
+/*TODO - get framebuffers down to two bits per pixel, making 8bpp for now to simplify integration */
+#define EINK_FBSIZE  EINK_HRES*EINK_VRES    
+
 
 #define EINK_WHITE      0xFF
 #define EINK_BLACK      0x00
@@ -18,15 +20,18 @@ typedef struct {
     uint32_t    busy_gpio;
     uint32_t    rst_gpio;
     bool        with_busy;
-    uint8_t *   framebuff_p;
+    uint8_t *   framebuff;
 } eink_t;
 
+int eink_drawimagebuff(eink_t * disp_p, uint8_t * buff);
 
-int eink_refresh(uint8_t disp_num);
+int eink_dumpfb(eink_t * disp_p);
 
-status_t eink_init(void);
+int eink_refresh(eink_t * disp_num);
 
-uint8_t * get_eink_framebuffer(void);        // returns pointer to eink framebuffer
+status_t eink_init(eink_t * disp_p);
+
+uint8_t * get_eink_framebuffer(eink_t * disp_p);        // returns pointer to eink framebuffer
 
 
 enum {

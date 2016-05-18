@@ -30,18 +30,20 @@ MODULE_SRCS += \
     $(LOCAL_DIR)/init.c \
     $(LOCAL_DIR)/sensor_bus.c \
     $(LOCAL_DIR)/usb.c \
+    $(LOCAL_DIR)/spi.c \
+    $(LOCAL_DIR)/display.c \
 
 MODULE_DEPS += \
     dev/usb \
+    dev/eink \
     lib/ndebug
 
 ifneq ($(DISPLAY_PANEL_TYPE),)
 
 MODULE_SRCS += \
-    $(LOCAL_DIR)/memory_lcd.c
 
 GLOBAL_DEFINES += \
-    ENABLE_LCD=1
+    ENABLE_LCD=0
 
 endif
 
