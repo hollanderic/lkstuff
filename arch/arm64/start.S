@@ -30,7 +30,26 @@ attr                    .req x27
 
 .section .text.boot
 FUNCTION(_start)
+.globl arm_reset
+arm_reset:
 #if WITH_KERNEL_VM
+    mov     x0, #0
+    mov     x1, '\r'
+    bl      uart_putc2
+    mov     x1, '\n'
+    bl      uart_putc2
+    mov     x1, 'L'
+    bl      uart_putc2
+    mov     x1, 'K'
+    bl      uart_putc2
+    mov     x1, '\r'
+    bl      uart_putc2
+    mov     x1, '\n'
+    bl      uart_putc2
+
+
+    bl      arm64_el3_to_el1
+
     /* enable caches so atomics and spinlocks work */
     mrs     tmp, sctlr_el1
     orr     tmp, tmp, #(1<<12) /* Enable icache */
@@ -69,6 +88,7 @@ FUNCTION(_start)
     add     mmu_initial_mapping, mmu_initial_mapping, #:lo12:mmu_initial_mappings
 
 .Linitial_mapping_loop:
+ 
     ldp     paddr, vaddr, [mmu_initial_mapping, #__MMU_INITIAL_MAPPING_PHYS_OFFSET]
     ldp     size, tmp, [mmu_initial_mapping, #__MMU_INITIAL_MAPPING_SIZE_OFFSET]
 
@@ -106,6 +126,7 @@ FUNCTION(_start)
     ldr     tmp, =_end
     subs    size, tmp, vaddr
     b.lo    . /* Error: _end < vaddr */
+ 
     cmp     mapping_size, size
     b.lo    . /* Error: mapping_size < size => RAM size too small for data/bss */
     mov     size, mapping_size
@@ -113,6 +134,7 @@ FUNCTION(_start)
 .Lmem_type_done:
     subs    mapping_size, mapping_size, size
     b.lo    . /* Error: mapping_size < size (RAM size too small for code/rodata?) */
+ 
 
     /* Check that paddr, vaddr and size are page aligned */
     orr     tmp, vaddr, paddr
@@ -126,6 +148,7 @@ FUNCTION(_start)
     /* Check that top bits were all set */
     tst     vaddr, #(~0 << MMU_KERNEL_SIZE_SHIFT)
     bne     . /* Error: vaddr out of range */
+
 
 .Lmap_range_top_loop:
     /* Select top level page table */
@@ -179,6 +202,7 @@ FUNCTION(_start)
     add     mmu_initial_mapping, mmu_initial_mapping, __MMU_INITIAL_MAPPING_SIZE
     b       .Linitial_mapping_loop
 
+
 .Lmap_range_need_page_table:
     /* Check if page table entry is unused */
     ldr     new_page_table, [page_table, index, lsl #3]
@@ -214,6 +238,7 @@ FUNCTION(_start)
     b       .Lmap_range_one_table_loop
 
 .Linitial_mapping_done:
+ 
 
     /* Prepare tt_trampoline page table */
 
@@ -270,6 +295,7 @@ FUNCTION(_start)
     msr     ttbr1_el1, page_table1
     isb
 
+
     /* Read SCTLR */
     mrs     tmp, sctlr_el1
 
@@ -278,20 +304,30 @@ FUNCTION(_start)
 
     /* Write back SCTLR */
     msr     sctlr_el1, tmp
+
+
 .Lmmu_on_pc:
+ 
     isb
 
     /* Jump to virtual code address */
     ldr     tmp, =.Lmmu_on_vaddr
+ 
     br      tmp
 
 .Lmmu_on_vaddr:
+    mov     x0, 'X'
+    bl      uart_putc
+   mov     x0, 'X'
+    bl      uart_putc
 
     /* Disable trampoline page-table in ttbr0 */
     ldr     tmp, =MMU_TCR_FLAGS_KERNEL
     msr     tcr_el1, tmp
     isb
 
+   mov     x0, 'X'
+    bl      uart_putc
 
     /* Invalidate TLB */
     tlbi    vmalle1
@@ -299,11 +335,17 @@ FUNCTION(_start)
 
 #if WITH_SMP
     cbnz    cpuid, .Lsecondary_boot
+    mov     x0, 'Y'
+    bl      uart_putc
+
 #endif
 #endif /* WITH_KERNEL_VM */
 
     ldr tmp, =__stack_end
     mov sp, tmp
+
+    mov     x0, 'Y'
+    bl      uart_putc
 
     /* clear bss */
 .L__do_bss:
@@ -318,12 +360,17 @@ FUNCTION(_start)
     str     xzr, [tmp], #8
     cbnz    tmp2, .L__bss_loop
 .L__bss_loop_done:
+    mov     x0, 'V'
+    bl      uart_putc
 
     bl  lk_main
     b   .
 
 #if WITH_SMP
 .Lsecondary_boot:
+    mov     x0, 'Z'
+    bl      uart_putc
+
     and     tmp, cpuid, #0xff
     cmp     tmp, #(1 << SMP_CPU_CLUSTER_SHIFT)
     bge     .Lunsupported_cpu_trap
