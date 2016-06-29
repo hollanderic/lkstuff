@@ -27,7 +27,7 @@
 #define BCM_PERIPH_SIZE         (0x01100000U)
 #define BCM_PERIPH_BASE_VIRT    (0xffffffffc0000000ULL)
 
-#define MEMORY_APERTURE_SIZE (30ULL * 1024 * 1024 * 1024)
+#define MEMORY_APERTURE_SIZE ( 1024 * 1024 * 1024)
 
 /* pointer to 'local' peripherals at 0x40000000 */
 #define BCM_LOCAL_PERIPH_BASE_VIRT (BCM_PERIPH_BASE_VIRT + 0x01000000)

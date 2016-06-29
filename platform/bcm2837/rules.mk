@@ -5,12 +5,14 @@ MODULE := $(LOCAL_DIR)
 ARCH := arm64
 ARM_CPU := cortex-a53
 WITH_SMP := 1
-LK_HEAP_IMPLEMENTATION ?= dlmalloc
+#LK_HEAP_IMPLEMENTATION ?= dlmalloc
 WITH_CPP_SUPPORT=true
 
 MODULE_DEPS := \
 	dev/timer/arm_generic \
 	lib/cbuf \
+	app/shell \
+    app/tests \
 
 #lib/bio \
 	lib/cbuf \

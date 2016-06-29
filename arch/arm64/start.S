@@ -32,7 +32,11 @@ attr                    .req x27
 FUNCTION(_start)
 .globl arm_reset
 arm_reset:
+    ldr x5, =0x00100000
+    mov sp, x5
+
 #if WITH_KERNEL_VM
+/*
     mov     x0, #0
     mov     x1, '\r'
     bl      uart_putc2
@@ -46,9 +50,20 @@ arm_reset:
     bl      uart_putc2
     mov     x1, '\n'
     bl      uart_putc2
-
-
+    mov     x0, sp
+    bl      dbg_puthex64
+*/
     bl      arm64_el3_to_el1
+
+    ldr     x0, =0x00080000
+    ldr     x1, =0xe0
+    str     x0, [x1]
+    ldr     x1, =0xe8
+    str     x0, [x1]
+    ldr     x1, =0xf0
+    str     x0, [x1]
+
+    //bl      arm64_el3_to_el1
 
     /* enable caches so atomics and spinlocks work */
     mrs     tmp, sctlr_el1
@@ -316,27 +331,27 @@ arm_reset:
     br      tmp
 
 .Lmmu_on_vaddr:
-    mov     x0, 'X'
-    bl      uart_putc
-   mov     x0, 'X'
-    bl      uart_putc
 
     /* Disable trampoline page-table in ttbr0 */
     ldr     tmp, =MMU_TCR_FLAGS_KERNEL
     msr     tcr_el1, tmp
     isb
 
-   mov     x0, 'X'
-    bl      uart_putc
-
     /* Invalidate TLB */
     tlbi    vmalle1
     isb
 
 #if WITH_SMP
+
+    mrs     x0, mpidr_el1
+    ubfx    x0, x0, #0, #SMP_CPU_ID_BITS
+    cmn     x0, #3
+    beq     moveon
+    sev
+moveon:
     cbnz    cpuid, .Lsecondary_boot
-    mov     x0, 'Y'
-    bl      uart_putc
+//    mov     x0, 'Y'
+//    bl      uart_putc
 
 #endif
 #endif /* WITH_KERNEL_VM */
@@ -344,8 +359,8 @@ arm_reset:
     ldr tmp, =__stack_end
     mov sp, tmp
 
-    mov     x0, 'Y'
-    bl      uart_putc
+ //   mov     x0, 'Y'
+ //   bl      uart_putc
 
     /* clear bss */
 .L__do_bss:
@@ -360,7 +375,7 @@ arm_reset:
     str     xzr, [tmp], #8
     cbnz    tmp2, .L__bss_loop
 .L__bss_loop_done:
-    mov     x0, 'V'
+    mov     x1, 'V'
     bl      uart_putc
 
     bl  lk_main
@@ -368,7 +383,7 @@ arm_reset:
 
 #if WITH_SMP
 .Lsecondary_boot:
-    mov     x0, 'Z'
+    mov     x1, 'Z'
     bl      uart_putc
 
     and     tmp, cpuid, #0xff

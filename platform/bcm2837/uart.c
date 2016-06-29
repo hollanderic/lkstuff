@@ -139,7 +139,7 @@ void dbg_puthex64(uint64_t val)
 
 
 
-void uart_putc(char data) {
+void uart_putc2(char data) {
     struct bcm283x_mu_regs *regs = (struct bcm283x_mu_regs *)BCM2835_MU_BASE2;
 
     /* Wait until there is space in the FIFO */
@@ -210,17 +210,17 @@ void uart_init_early(void)
     //}
 }
 
-int uart_putc2(int port, char c)
+int uart_putc(int port, char c)
 {
-    bcm283x_mu_serial_putc(c);
 
-    return 1;
-    uintptr_t base = uart_to_ptr(port);
+    struct bcm283x_mu_regs *regs = (struct bcm283x_mu_regs *)BCM2835_MU_BASE2;
 
-    /* spin while fifo is full */
-    while (UARTREG(base, UART_TFR) & (1<<5))
+    /* Wait until there is space in the FIFO */
+    while (!(readl(&regs->lsr) & BCM283X_MU_LSR_TX_EMPTY))
         ;
-    UARTREG(base, UART_DR) = c;
+
+    /* Send the character */
+    writel(c, &regs->io);    
 
     return 1;
 }
@@ -249,5 +249,6 @@ void uart_flush_rx(int port)
 void uart_init_port(int port, uint baud)
 {
 }
+
 
 
