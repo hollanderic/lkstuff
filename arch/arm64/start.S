@@ -36,34 +36,32 @@ arm_reset:
     mov sp, x5
 
 #if WITH_KERNEL_VM
-/*
+
     mov     x0, #0
-    mov     x1, '\r'
+    mov     x0, '\r'
     bl      uart_putc2
-    mov     x1, '\n'
+    mov     x0, '\n'
     bl      uart_putc2
-    mov     x1, 'L'
+    mov     x0, 'L'
     bl      uart_putc2
-    mov     x1, 'K'
+    mov     x0, 'K'
     bl      uart_putc2
-    mov     x1, '\r'
+    mov     x0, '\r'
     bl      uart_putc2
-    mov     x1, '\n'
+    mov     x0, '\n'
     bl      uart_putc2
     mov     x0, sp
     bl      dbg_puthex64
-*/
+
     bl      arm64_el3_to_el1
 
-    ldr     x0, =0x00080000
-    ldr     x1, =0xe0
-    str     x0, [x1]
-    ldr     x1, =0xe8
-    str     x0, [x1]
-    ldr     x1, =0xf0
-    str     x0, [x1]
-
-    //bl      arm64_el3_to_el1
+//    ldr     x0, =0x00080000
+//    ldr     x1, =0xe0
+//    str     x0, [x1]
+//    ldr     x1, =0xe8
+//    str     x0, [x1]
+//    ldr     x1, =0xf0
+//    str     x0, [x1]
 
     /* enable caches so atomics and spinlocks work */
     mrs     tmp, sctlr_el1
@@ -106,12 +104,32 @@ arm_reset:
  
     ldp     paddr, vaddr, [mmu_initial_mapping, #__MMU_INITIAL_MAPPING_PHYS_OFFSET]
     ldp     size, tmp, [mmu_initial_mapping, #__MMU_INITIAL_MAPPING_SIZE_OFFSET]
+    mov     x0,'\n'
+    bl      uart_putc2    
+    mov     x0,'\n'
+    bl      uart_putc2    
+    mov     x0,'\r'
+    bl      uart_putc2
+    mov     x0,paddr
+    bl      dbg_puthex64
+    mov     x0,vaddr
+    bl      dbg_puthex64
+    mov     x0,size
+    bl      dbg_puthex64
+    mov     x0,tmp
+    bl      dbg_puthex64
+
 
     tbzmask tmp, MMU_INITIAL_MAPPING_FLAG_DYNAMIC, .Lnot_dynamic
+    mov     x0,'X'
+    bl      uart_putc2
+
     adr     paddr, _start
     mov     size, x0
     str     paddr, [mmu_initial_mapping, #__MMU_INITIAL_MAPPING_PHYS_OFFSET]
     str     size, [mmu_initial_mapping, #__MMU_INITIAL_MAPPING_SIZE_OFFSET]
+
+ 
 
 .Lnot_dynamic:
     /* if size == 0, end of list */
@@ -120,6 +138,8 @@ arm_reset:
 
     /* set up the flags */
     tbzmask tmp, MMU_INITIAL_MAPPING_FLAG_UNCACHED, .Lnot_uncached
+    mov     x0, 'u'
+    bl      uart_putc2
     ldr     attr, =MMU_INITIAL_MAP_STRONGLY_ORDERED
     b       .Lmem_type_done
 .Lnot_uncached:
@@ -129,33 +149,60 @@ arm_reset:
 .Lnot_device:
 
 .Lmapping_size_loop:
+    //mov     x0, 'm'
+    //bl      uart_putc2
     ldr     attr, =MMU_PTE_KERNEL_RO_FLAGS
     ldr     tmp, =__rodata_start
+    mov     x0, '>'
+    bl      uart_putc2
+    mov     x0, vaddr
+    bl      dbg_puthex64
+    mov     x0, '>'
+    bl      uart_putc2
+    mov     x0, tmp
+    bl      dbg_puthex64
+
     subs    size, tmp, vaddr
     b.hi    .Lmem_type_done
+
+    mov     x0, 'm'
+    bl      uart_putc2
     orr     attr, attr, #MMU_PTE_ATTR_PXN
     ldr     tmp, =__data_start
     subs    size, tmp, vaddr
     b.hi    .Lmem_type_done
+    mov     x0, 'm'
+    bl      uart_putc2
     ldr     attr, =MMU_PTE_KERNEL_DATA_FLAGS
     ldr     tmp, =_end
     subs    size, tmp, vaddr
     b.lo    . /* Error: _end < vaddr */
- 
+
+    mov     x0, 'a'
+    bl      uart_putc2
     cmp     mapping_size, size
     b.lo    . /* Error: mapping_size < size => RAM size too small for data/bss */
+    mov     x0, 'A'
+    bl      uart_putc2
+
     mov     size, mapping_size
 
 .Lmem_type_done:
+    mov     x0, 'b'
+    bl      uart_putc2
     subs    mapping_size, mapping_size, size
     b.lo    . /* Error: mapping_size < size (RAM size too small for code/rodata?) */
- 
+    mov     x0, 'B'
+    bl      uart_putc2
+
 
     /* Check that paddr, vaddr and size are page aligned */
     orr     tmp, vaddr, paddr
     orr     tmp, tmp, size
     tst     tmp, #(1 << MMU_KERNEL_PAGE_SIZE_SHIFT) - 1
     bne     . /* Error: not page aligned */
+    mov     x0, 'c'
+    bl      uart_putc2
 
     /* Clear top bits of virtual address (should be all set) */
     eor     vaddr, vaddr, #(~0 << MMU_KERNEL_SIZE_SHIFT)
@@ -163,6 +210,8 @@ arm_reset:
     /* Check that top bits were all set */
     tst     vaddr, #(~0 << MMU_KERNEL_SIZE_SHIFT)
     bne     . /* Error: vaddr out of range */
+    mov     x0, 'd'
+    bl      uart_putc2
 
 
 .Lmap_range_top_loop:
@@ -241,6 +290,9 @@ arm_reset:
     and     tmp, new_page_table, #MMU_PTE_DESCRIPTOR_MASK
     cmp     tmp, #MMU_PTE_L012_DESCRIPTOR_TABLE
     b.ne    . /* Error: entry already in use (as a block entry) */
+    //mov     x0, 'e'
+    //bl      uart_putc2
+
 
     /* switch to next page table level */
     bic     page_table, new_page_table, #MMU_PTE_DESCRIPTOR_MASK
@@ -253,7 +305,14 @@ arm_reset:
     b       .Lmap_range_one_table_loop
 
 .Linitial_mapping_done:
- 
+    //mov     x0, '\n'
+    //bl      uart_putc2
+    //mov     x0, '\r'
+    //bl      uart_putc2
+    mov     x0, 'A'
+    bl      uart_putc2
+
+
 
     /* Prepare tt_trampoline page table */
 
@@ -343,11 +402,11 @@ arm_reset:
 
 #if WITH_SMP
 
-    mrs     x0, mpidr_el1
-    ubfx    x0, x0, #0, #SMP_CPU_ID_BITS
-    cmn     x0, #3
-    beq     moveon
-    sev
+//   mrs     x0, mpidr_el1
+//    ubfx    x0, x0, #0, #SMP_CPU_ID_BITS
+//    cmn     x0, #3
+//    beq     moveon
+//    sev
 moveon:
     cbnz    cpuid, .Lsecondary_boot
 //    mov     x0, 'Y'

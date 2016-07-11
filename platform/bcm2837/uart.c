@@ -140,7 +140,7 @@ void dbg_puthex64(uint64_t val)
 
 
 void uart_putc2(char data) {
-    struct bcm283x_mu_regs *regs = (struct bcm283x_mu_regs *)BCM2835_MU_BASE2;
+    struct bcm283x_mu_regs *regs = (struct bcm283x_mu_regs *)BCM2835_MU_BASE;
 
     /* Wait until there is space in the FIFO */
     while (!(readl(&regs->lsr) & BCM283X_MU_LSR_TX_EMPTY))

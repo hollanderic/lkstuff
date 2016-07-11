@@ -13,6 +13,7 @@ MODULE_DEPS := \
 	lib/cbuf \
 	app/shell \
     app/tests \
+    lib/fdt \
 
 #lib/bio \
 	lib/cbuf \
@@ -33,7 +34,7 @@ KERNEL_LOAD_OFFSET := 0x00080000
 
 
 # put our kernel at 0x80000000
-#ERNEL_BASE = 0x80000000
+#KERNEL_BASE = 0xFFFF000000080000  
 
 GLOBAL_DEFINES += \
     MEMBASE=$(MEMBASE) \
