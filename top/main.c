@@ -111,12 +111,11 @@ void lk_main(ulong arg0, ulong arg1, ulong arg2, ulong arg3)
     // deal with any static constructors
     dprintf(SPEW, "calling constructors\n");
     call_constructors();
-    dprintf(SPEW, "called constructors\n");
+
     // initialize the kernel
     lk_primary_cpu_init_level(LK_INIT_LEVEL_HEAP, LK_INIT_LEVEL_KERNEL - 1);
-    dprintf(SPEW, "called lk_primary_cpu_init_level\n");
     kernel_init();
-    dprintf(SPEW, "called kernel_init\n");
+
     lk_primary_cpu_init_level(LK_INIT_LEVEL_KERNEL, LK_INIT_LEVEL_THREADING - 1);
 
     // create a thread to complete system initialization
