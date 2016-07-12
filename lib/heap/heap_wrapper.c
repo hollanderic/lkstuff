@@ -67,10 +67,7 @@ static inline void HEAP_INIT(void)
 {
     /* start the heap off with some spare memory in the page allocator */
     size_t len;
-    printf("prealloc\n");
     void *ptr = page_first_alloc(&len);
-    printf("postalloc %x\n",ptr);
-
     miniheap_init(ptr, len);
 }
 #define HEAP_DUMP miniheap_dump

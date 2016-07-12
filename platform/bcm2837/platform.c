@@ -148,6 +148,12 @@ void platform_early_init(void)
     /* add the main memory arena */
     pmm_add_arena(&arena);
 
+
+    /* reserve the first 64k of ram, which should be holding the fdt */
+    struct list_node list = LIST_INITIAL_VALUE(list);
+    pmm_alloc_range(MEMBASE, 0x80000 / PAGE_SIZE, &list);
+
+
 #if WITH_SMP
     /* start the other cpus */
     uintptr_t sec_entry = (uintptr_t)&arm_reset;
