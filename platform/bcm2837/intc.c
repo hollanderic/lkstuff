@@ -29,7 +29,7 @@
 #include <kernel/thread.h>
 #include <kernel/mp.h>
 #include <platform/interrupts.h>
-#include <platform/bcm2835.h>
+#include <platform/bcm2837.h>
 
 #define LOCAL_TRACE 0
 

@@ -22,7 +22,7 @@
  */
 #pragma once
 
-#include <platform/bcm2835.h>
+#include <platform/bcm2837.h>
 
 #define GICBASE(n)  (CPUPRIV_BASE_PHYS)
 #define GICC_OFFSET (0x0100)

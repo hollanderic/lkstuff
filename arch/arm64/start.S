@@ -35,7 +35,7 @@ arm_reset:
 
 #if WITH_KERNEL_VM
 
-    bl      arm64_el3_to_el1
+    bl      arm64_elX_to_el1
 
     /* enable caches so atomics and spinlocks work */
     mrs     tmp, sctlr_el1

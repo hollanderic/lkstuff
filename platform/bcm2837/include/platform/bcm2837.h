@@ -23,6 +23,7 @@
 #pragma once
 
 #define SDRAM_BASE 0
+/* Note: BCM2836/BCM2837 use different peripheral base than BCM2835 */
 #define BCM_PERIPH_BASE_PHYS    (0x3f000000U)
 #define BCM_PERIPH_SIZE         (0x01100000U)
 #define BCM_PERIPH_BASE_VIRT    (0xffffffffc0000000ULL)

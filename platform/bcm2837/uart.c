@@ -27,7 +27,7 @@
 #include <kernel/thread.h>
 #include <platform/interrupts.h>
 #include <platform/debug.h>
-#include <platform/bcm2835.h>
+#include <platform/bcm2837.h>
 
 /* TODO: extract this into a generic PL011 driver */
 
@@ -57,8 +57,10 @@ static cbuf_t uart_rx_buf[NUM_UART];
 static inline uintptr_t uart_to_ptr(unsigned int n)
 {
     switch (n) {
-        default:
         case 0:
+            return UART0_BASE;
+        default:
+        case 1:
             return UART1_BASE;
     }
 }
@@ -109,45 +111,6 @@ static void bcm283x_mu_serial_putc(const char data)
 
     /* Send the character */
     writel(data, &regs->io);
-}
-
-void dbg_puthex4(int val)
-{
-    int c;
-
-    if (val < 10)
-        c = val + '0';
-    else
-        c = val - 10 + 'A';
-
-    bcm283x_mu_serial_putc(c);
-}
-
-void dbg_puthex32(uint32_t val)
-{
-    for (int i = 28; i >= 0; i -= 4)
-        dbg_puthex4((val >> i) & 0xf);
-}
-
-void dbg_puthex64(uint64_t val)
-{
-    dbg_puthex32(val >> 32);
-    dbg_puthex32(val & 0xffffffffU);
-    bcm283x_mu_serial_putc('\n');
-    bcm283x_mu_serial_putc('\r');
-}
-
-
-
-void uart_putc2(char data) {
-    struct bcm283x_mu_regs *regs = (struct bcm283x_mu_regs *)BCM2835_MU_BASE;
-
-    /* Wait until there is space in the FIFO */
-    while (!(readl(&regs->lsr) & BCM283X_MU_LSR_TX_EMPTY))
-        ;
-
-    /* Send the character */
-    writel(data, &regs->io);    
 }
 
 

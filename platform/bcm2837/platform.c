@@ -36,7 +36,7 @@
 #include <dev/timer/arm_generic.h>
 #include <platform.h>
 #include <platform/interrupts.h>
-#include <platform/bcm2835.h>
+#include <platform/bcm2837.h>
 
 extern void intc_init(void);
 extern void arm_reset(void);
@@ -59,14 +59,6 @@ struct mmu_initial_mapping mmu_initial_mappings[] = {
         .size = BCM_PERIPH_SIZE,
         .flags = MMU_INITIAL_MAPPING_FLAG_DEVICE,
         .name = "bcm peripherals"
-    },
-
-    /* identity map to let the boot code run 
-    {
-        .phys = SDRAM_BASE,
-        .virt = SDRAM_BASE,
-        .size = MEMORY_APERTURE_SIZE,
-        .flags = MMU_INITIAL_MAPPING_TEMPORARY
     },
 
     /* null entry to terminate the list */
@@ -96,7 +88,6 @@ void platform_early_init(void)
    /* look for a flattened device tree just before the kernel */
     const void *fdt = (void *)KERNEL_BASE;
     int err = fdt_check_header(fdt);
-    printf("fdt check returned %d at 0x%llx\n",err,fdt);
     if (err >= 0) {
         /* walk the nodes, looking for 'memory' */
         int depth = 0;
@@ -136,23 +127,12 @@ void platform_early_init(void)
         }
     }
 
-
-
-
-
-
-
-
-
-
     /* add the main memory arena */
     pmm_add_arena(&arena);
-
 
     /* reserve the first 64k of ram, which should be holding the fdt */
     struct list_node list = LIST_INITIAL_VALUE(list);
     pmm_alloc_range(MEMBASE, 0x80000 / PAGE_SIZE, &list);
-
 
 #if WITH_SMP
     /* start the other cpus */
