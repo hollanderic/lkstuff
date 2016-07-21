@@ -33,7 +33,56 @@
  *  but extending to 64 to ensure occupying full cache lines.
  */
 volatile static uint8_t vc_mbox_buff[1024] __ALIGNED(64);
+volatile static fb_mbox_t fb_mbox __ALIGNED(64);
 
+uint32_t get_vcore_framebuffer(uint32_t * fb) {
+
+	uint32_t i;
+
+	
+
+	fb_mbox.phys_width  = 640;
+	fb_mbox.phys_height = 480;
+	fb_mbox.virt_width  = 640;
+	fb_mbox.virt_height = 480;
+	fb_mbox.pitch		= 0;
+	fb_mbox.depth		= 24;
+	fb_mbox.virt_x_offs = 0;
+	fb_mbox.virt_y_offs = 0;
+	fb_mbox.fb_p		= 0;
+	fb_mbox.fb_size		= 0;
+
+	arch_clean_cache_range(&fb_mbox,sizeof(fb_mbox));
+
+	if  (*REG32(ARM0_MAILBOX_STATUS) & VCORE_MAILBOX_FULL ) {
+		printf("Mailbox full-ERR\n:");
+		return 0;
+	}
+	uint32_t temp = ((uint32_t)&fb_mbox & 0x00000000fffffff0)  + VC_FB_CHANNEL + 0xC0000000;
+	printf("temp= %08x\n",temp);
+	ISB;
+	DSB;
+	*REG32(ARM0_MAILBOX_WRITE) = temp;
+	ISB;
+	DSB;
+	i=0xffffffff;
+	while (*REG32(ARM0_MAILBOX_STATUS) & VCORE_MAILBOX_EMPTY ) {
+		i--;
+		if (i==0) {
+			printf("empty\n");
+			return 0;
+		}
+	}
+
+	uint32_t resp_addr;
+	resp_addr = *REG32(ARM0_MAILBOX_READ);
+
+	arch_invalidate_cache_range(&fb_mbox,sizeof(fb_mbox));
+
+	*fb = fb_mbox.fb_p;
+	return fb_mbox.fb_size;	
+
+}
 
 
 

@@ -61,6 +61,7 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/miniuart.c
 
 MODULE_DEPS += \
+	    lib/gfx \
 		app/shell \
 	    app/tests \
 	    lib/fdt

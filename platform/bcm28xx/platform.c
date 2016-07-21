@@ -31,6 +31,8 @@
 #include <kernel/vm.h>
 #include <kernel/spinlock.h>
 #include <dev/timer/arm_generic.h>
+#include <dev/display.h>
+
 #include <platform.h>
 #include <platform/interrupts.h>
 #include <platform/bcm28xx.h>
@@ -218,11 +220,15 @@ void platform_init(void)
     uart_init();
 }
 
+static uint8_t * vbuff;
 
 void target_init(void)
 {
  
     uint32_t * temp;
+
+    
+    uint32_t addr;
 
     temp = (uint32_t *)get_vcore_single(0x00010005,8,8);
     if (temp) printf ("ARM memory base:0x%08x len:0x%08x\n",temp[0],temp[1]);
@@ -233,6 +239,64 @@ void target_init(void)
     temp = (uint32_t *)get_vcore_single(0x00010004,8,8);
     if (temp) printf ("SERIAL # %08x%08x\n",temp[0],temp[1]);
 
+    uint32_t size;
+    size = get_vcore_framebuffer(&addr);
+    printf ("fb returned at 0x%08x of %d bytes in size\n",addr,size);
+
+    vbuff = (uint8_t *)((addr & 0x3fffffff) + 0xffff000000000000);
+    printf("video buffer at %llx\n",vbuff);
+
+    for (int i=0; i < size >> 1; i++) {
+        vbuff[i] = 0xff;
+    }
+
+    arch_clean_cache_range(vbuff,size);
+
+
+}
+
+static void flush(void){
+    arch_clean_cache_range(vbuff,640*480*3);
+}
+
+status_t display_get_framebuffer(struct display_framebuffer *fb)
+{
+    fb->image.pixels = (void *)vbuff;
+
+    fb->format = DISPLAY_FORMAT_RGB_x888;
+    fb->image.format = IMAGE_FORMAT_RGB_x888;
+    fb->image.rowbytes = 640*3;
+
+    fb->image.width = 640;
+    fb->image.height = 480;
+    fb->image.stride = 640*3;
+    fb->flush = flush;
+
+    return NO_ERROR;
+}
+
+status_t display_get_info(struct display_info *info)
+{
+    /*if (ltdc_handle.LayerCfg[active_layer].PixelFormat == LTDC_PIXEL_FORMAT_ARGB8888) {
+        info->format = DISPLAY_FORMAT_ARGB_8888;
+    } else if (ltdc_handle.LayerCfg[active_layer].PixelFormat == LTDC_PIXEL_FORMAT_RGB565) {
+        info->format = DISPLAY_FORMAT_RGB_565;
+    } else {
+        panic("unhandled pixel format\n");
+        return ERR_NOT_FOUND;
+    }
+
+    info->width = BSP_LCD_GetXSize();
+    info->height = BSP_LCD_GetYSize();
+*/
+    return NO_ERROR;
+}
+
+status_t display_present(struct display_image *image, uint starty, uint endy)
+{
+  TRACEF("display_present - not implemented");
+  DEBUG_ASSERT(false);
+  return NO_ERROR;
 }
 
 

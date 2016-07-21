@@ -32,7 +32,23 @@
 #define VCORE_MAILBOX_FULL	0x80000000
 #define VCORE_MAILBOX_EMPTY	0x40000000
 
+#define VC_FB_CHANNEL 0x01
 #define ARM_TO_VC_CHANNEL 0x08
 #define VC_TO_ARM_CHANNEL 0x09
+
+typedef struct {
+	uint32_t phys_width;	//request
+	uint32_t phys_height;	//request
+	uint32_t virt_width;	//request
+	uint32_t virt_height;	//request
+	uint32_t pitch;			//response
+	uint32_t depth;			//request
+	uint32_t virt_x_offs;	//request
+	uint32_t virt_y_offs;	//request
+	uint32_t fb_p;			//response
+	uint32_t fb_size;		//response
+} fb_mbox_t;
+
+uint32_t get_vcore_framebuffer(uint32_t * fb);
 
 uint8_t * get_vcore_single(uint32_t tag, uint32_t req_len, uint32_t rsp_len);
