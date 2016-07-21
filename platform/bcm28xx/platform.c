@@ -113,6 +113,9 @@ struct mmu_initial_mapping mmu_initial_mappings[] = {
 extern void intc_init(void);
 extern void arm_reset(void);
 
+static fb_mbox_t framebuff_descriptor __ALIGNED(64);
+
+static uint8_t * vbuff;
 
 static pmm_arena_t arena = {
     .name = "sdram",
@@ -218,9 +221,31 @@ void platform_early_init(void)
 void platform_init(void)
 {
     uart_init();
+
+    /* Get framebuffer for jraphics */
+
+    framebuff_descriptor.phys_width  = 640;
+    framebuff_descriptor.phys_height = 480;
+    framebuff_descriptor.virt_width  = 640;
+    framebuff_descriptor.virt_height = 480;
+    framebuff_descriptor.pitch       = 0;
+    framebuff_descriptor.depth       = 32;
+    framebuff_descriptor.virt_x_offs = 0;
+    framebuff_descriptor.virt_y_offs = 0;
+    framebuff_descriptor.fb_p        = 0;
+    framebuff_descriptor.fb_size     = 0;
+
+    if (!get_vcore_framebuffer(&framebuff_descriptor)) {
+        printf ("fb returned at 0x%08x of %d bytes in size\n",framebuff_descriptor.fb_p
+                                                             ,framebuff_descriptor.fb_size);
+
+        vbuff = (uint8_t *)((framebuff_descriptor.fb_p & 0x3fffffff) + KERNEL_BASE);
+        printf("video buffer at %llx\n",vbuff);
+        printf("pitch: %d\n",framebuff_descriptor.pitch);
+    }
 }
 
-static uint8_t * vbuff;
+
 
 void target_init(void)
 {
@@ -237,39 +262,25 @@ void target_init(void)
     if (temp) printf ("VC  memory base:0x%08x len:0x%08x\n",temp[0],temp[1]);
 
     temp = (uint32_t *)get_vcore_single(0x00010004,8,8);
-    if (temp) printf ("SERIAL # %08x%08x\n",temp[0],temp[1]);
-
-    uint32_t size;
-    size = get_vcore_framebuffer(&addr);
-    printf ("fb returned at 0x%08x of %d bytes in size\n",addr,size);
-
-    vbuff = (uint8_t *)((addr & 0x3fffffff) + 0xffff000000000000);
-    printf("video buffer at %llx\n",vbuff);
-
-    for (int i=0; i < size >> 1; i++) {
-        vbuff[i] = 0xff;
-    }
-
-    arch_clean_cache_range(vbuff,size);
-
-
+    if (temp) printf ("SERIAL # %08x%08x\n",temp[1],temp[0]);
+ 
 }
 
 static void flush(void){
-    arch_clean_cache_range(vbuff,640*480*3);
+    arch_clean_cache_range(vbuff,framebuff_descriptor.fb_size);
 }
 
 status_t display_get_framebuffer(struct display_framebuffer *fb)
 {
     fb->image.pixels = (void *)vbuff;
 
-    fb->format = DISPLAY_FORMAT_RGB_x888;
-    fb->image.format = IMAGE_FORMAT_RGB_x888;
-    fb->image.rowbytes = 640*3;
+    fb->format = DISPLAY_FORMAT_ARGB_8888;
+    fb->image.format = IMAGE_FORMAT_ARGB_8888;
+    fb->image.rowbytes = framebuff_descriptor.phys_width * 4;
 
-    fb->image.width = 640;
-    fb->image.height = 480;
-    fb->image.stride = 640*3;
+    fb->image.width = framebuff_descriptor.phys_width;
+    fb->image.height = framebuff_descriptor.phys_height;
+    fb->image.stride = framebuff_descriptor.phys_width;
     fb->flush = flush;
 
     return NO_ERROR;
@@ -277,6 +288,10 @@ status_t display_get_framebuffer(struct display_framebuffer *fb)
 
 status_t display_get_info(struct display_info *info)
 {
+    info->format = DISPLAY_FORMAT_ARGB_8888;
+    info->width = framebuff_descriptor.phys_width;
+    info->height = framebuff_descriptor.phys_height;
+
     /*if (ltdc_handle.LayerCfg[active_layer].PixelFormat == LTDC_PIXEL_FORMAT_ARGB8888) {
         info->format = DISPLAY_FORMAT_ARGB_8888;
     } else if (ltdc_handle.LayerCfg[active_layer].PixelFormat == LTDC_PIXEL_FORMAT_RGB565) {

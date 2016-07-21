@@ -36,6 +36,13 @@
 #define ARM_TO_VC_CHANNEL 0x08
 #define VC_TO_ARM_CHANNEL 0x09
 
+#define VCORE_SUCCESS			0
+#define VCORE_ERR_MBOX_FULL 	1
+#define VCORE_ERR_MBOX_TIMEOUT 	2
+
+#define VCORE_READ_ATTEMPTS 0xffffffff
+
+
 typedef struct {
 	uint32_t phys_width;	//request
 	uint32_t phys_height;	//request
@@ -49,6 +56,5 @@ typedef struct {
 	uint32_t fb_size;		//response
 } fb_mbox_t;
 
-uint32_t get_vcore_framebuffer(uint32_t * fb);
-
+uint32_t get_vcore_framebuffer(fb_mbox_t * fb_mbox);
 uint8_t * get_vcore_single(uint32_t tag, uint32_t req_len, uint32_t rsp_len);

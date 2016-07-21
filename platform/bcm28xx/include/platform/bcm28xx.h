@@ -36,6 +36,10 @@
 #error Unknown BCM28XX Variant
 #endif
 
+
+#define BCM_SDRAM_BUS_ADDR_BASE_NO_L2 0xc0000000
+
+
 /* pointer to 'local' peripherals at 0x40000000 */
 #define BCM_LOCAL_PERIPH_BASE_VIRT (BCM_PERIPH_BASE_VIRT + 0x01000000)
 

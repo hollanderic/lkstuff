@@ -20,7 +20,7 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/gpio.c \
 	$(LOCAL_DIR)/intc.c \
 	$(LOCAL_DIR)/platform.c \
-	$(LOCAL_DIR)/vc_mailbox.c \
+	$(LOCAL_DIR)/videocore.c \
 
 MEMBASE := 0x00000000
 
@@ -62,6 +62,7 @@ MODULE_SRCS += \
 
 MODULE_DEPS += \
 	    lib/gfx \
+	    lib/gfxconsole \
 		app/shell \
 	    app/tests \
 	    lib/fdt
