@@ -224,10 +224,10 @@ void platform_init(void)
 
     /* Get framebuffer for jraphics */
 
-    framebuff_descriptor.phys_width  = 640;
-    framebuff_descriptor.phys_height = 480;
-    framebuff_descriptor.virt_width  = 640;
-    framebuff_descriptor.virt_height = 480;
+    framebuff_descriptor.phys_width  = 1920;
+    framebuff_descriptor.phys_height = 1080;
+    framebuff_descriptor.virt_width  = 1920;
+    framebuff_descriptor.virt_height = 1080;
     framebuff_descriptor.pitch       = 0;
     framebuff_descriptor.depth       = 32;
     framebuff_descriptor.virt_x_offs = 0;
