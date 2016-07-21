@@ -34,6 +34,7 @@
 #include <platform.h>
 #include <platform/interrupts.h>
 #include <platform/bcm28xx.h>
+#include <platform/videocore.h>
 
 #if BCM2836
 #include <arch/arm.h>
@@ -194,7 +195,7 @@ void platform_early_init(void)
     unsigned long long *spin_table = (void *)(KERNEL_ASPACE_BASE + 0xd8);
 
     for (uint i = 1; i <= 3; i++) {
-        spin_table[i] = sec_entry;
+    //    spin_table[i] = sec_entry;
  //       __asm__ __volatile__ ("" : : : "memory");
         arch_clean_cache_range(0xffff000000000000,256);
         __asm__ __volatile__("sev");
@@ -210,17 +211,6 @@ void platform_early_init(void)
 #endif
 }
 
-typedef struct {
-    uint32_t size;
-    uint32_t code;
-    uint8_t buff[1000];
-} mbox_buff;
-
-
-volatile static uint8_t vc_mbox_buff[1024] __ALIGNED(16);
-volatile static uint32_t * mbox_wrt;
-volatile static uint32_t * mbox_rd;
-volatile static uint32_t * mbox_status;
 
 
 void platform_init(void)
@@ -228,60 +218,20 @@ void platform_init(void)
     uart_init();
 }
 
-#define MBOX_STATUS 0xffffffffc000B898
-#define MBOX_WR 0xffffffffc000B8a0
-#define MBOX_READ 0xffffffffc000B880
-
 
 void target_init(void)
 {
  
+    uint32_t * temp;
 
-   
-    mbox_wrt = 0xffffffffc000B8a0; 
-    mbox_rd = 0xffffffffc000B880; 
-    mbox_status = 0xffffffffc000B898; 
+    temp = (uint32_t *)get_vcore_single(0x00010005,8,8);
+    if (temp) printf ("ARM memory base:0x%08x len:0x%08x\n",temp[0],temp[1]);
+ 
+    temp = (uint32_t *)get_vcore_single(0x00010006,8,8);
+    if (temp) printf ("VC  memory base:0x%08x len:0x%08x\n",temp[0],temp[1]);
 
-    uint32_t * wbuff = vc_mbox_buff;
-    wbuff[0] = 28;
-    wbuff[1] = 0x00000000;
-    wbuff[2] = 0x00010003;
-    wbuff[3] = 0x00000008;
-    wbuff[4] = 0x00000006;
-    wbuff[5] = 0x00000000;
-    wbuff[6] = 0x00000000;
-    wbuff[7] = 0x00000000;
-    __asm__ __volatile__ ("" : : : "memory");
-   for (int i=0; i<7; i++) {
-        printf("[%d] -> %08x\n",i,wbuff[i]);
-    }
-
-
-    arch_clean_cache_range(vc_mbox_buff,1024);
-
-    printf("READ register(before): %x\n",*REG32(MBOX_READ));
-    printf("Status register (before): %x\n", *REG32(MBOX_STATUS));
-    uint32_t temp = (uint32_t)((  (uint32_t)wbuff & 0x00000000ffffffff) +8);
-    printf("Writing value %08x to %llx\n",temp,MBOX_WR);
-    DSB;
-    *REG32(MBOX_WR) = (uint32_t)((  (uint32_t)wbuff & 0x00000000ffffffff) +8);
-    DSB;
-    ISB;
-    DSB;
-    ISB;
-    printf("Status register (after): %x\n", *REG32(MBOX_STATUS));
-    //printf("READ register: %x\n",*REG32(MBOX_READ));
-     __asm__ __volatile__ ("" : : : "memory");
-    printf("Status register (after): %x\n", *REG32(MBOX_STATUS));
-    ISB;
-    DSB;
-    arch_invalidate_cache_range(vc_mbox_buff, 1024);
-
-    arch_clean_cache_range(vc_mbox_buff, 1024) ;
-    for (int i=0; i<7; i++) {
-        printf("[%d] -> %08x\n",i,wbuff[i]);
-    }
-
+    temp = (uint32_t *)get_vcore_single(0x00010004,8,8);
+    if (temp) printf ("SERIAL # %08x%08x\n",temp[0],temp[1]);
 
 }
 

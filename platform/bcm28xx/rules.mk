@@ -20,6 +20,7 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/gpio.c \
 	$(LOCAL_DIR)/intc.c \
 	$(LOCAL_DIR)/platform.c \
+	$(LOCAL_DIR)/vc_mailbox.c \
 
 MEMBASE := 0x00000000
 
