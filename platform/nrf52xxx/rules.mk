@@ -39,12 +39,14 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/vectab.c \
 	$(LOCAL_DIR)/gpio.c \
     $(LOCAL_DIR)/timer.c \
+    $(LOCAL_DIR)/radio.c \
 
 LINKER_SCRIPT += \
 	$(BUILDDIR)/system-twosegment.ld
 
 MODULE_DEPS += \
 	platform/nrf52 \
-	lib/cbuf
+	lib/cbuf \
+	lib/ble
 
 include make/module.mk
