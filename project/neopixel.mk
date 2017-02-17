@@ -2,6 +2,8 @@ MODULES += \
 	app/shell \
     app/tests \
     app/neopixel52 \
+    app/pdm52 \
+
 
 
 
