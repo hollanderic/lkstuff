@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Travis Geiselbrecht
+ * Copyright (c) 2018 Eric Holland
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files
@@ -20,36 +20,13 @@
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-#include <err.h>
-#include <debug.h>
-#include <target.h>
-#include <compiler.h>
-#include <dev/gpio.h>
-#include <platform/gpio.h>
-#include <platform/nrf52.h>
-#include <platform/usbd.h>
-#include <target/gpioconfig.h>
-
-void target_early_init(void)
-{
-    gpio_config(GPIO_LED1, GPIO_OUTPUT);
-    gpio_config(GPIO_LED2, GPIO_OUTPUT);
-    gpio_config(GPIO_LED3, GPIO_OUTPUT);
-    gpio_config(GPIO_LED4, GPIO_OUTPUT);
-
-    gpio_set(GPIO_LED1,0);
-    gpio_set(GPIO_LED2,1);
-    gpio_set(GPIO_LED3,0);
-    gpio_set(GPIO_LED4,1);
-
-    nrf52_debug_early_init();
-}
 
 
-void target_init(void)
-{
-    nrf52_debug_init();
-    dprintf(SPEW,"Target: PCA10056 DK...\n");
+#ifndef __PLATFORM_NRF_USBD_H
+#define __PLATFORM_NRF_USBD_H
 
-    nrf52_usbd_init();
-}
+void nrf52_usbd_init(void);
+
+
+#endif
+
