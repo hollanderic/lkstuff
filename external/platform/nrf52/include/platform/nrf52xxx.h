@@ -1963,8 +1963,83 @@ typedef struct {                                    /*!< GPIO Structure         
 /* ================                      USBD                      ================ */
 /* ================================================================================ */
 typedef struct {
+  __IO  uint32_t  PTR;
+  __IO  uint32_t  MAXCNT;
+  __IO  uint32_t  AMOUNT;
+  __I   uint32_t  RESERVED0[2];
+} USBDPtr_t;
+
+typedef struct {
   /* TODO - replace with register descriptors */
- __IO uint32_t  REGS[491];
+  __I   uint32_t  RESERVED0;
+  __O   uint32_t  TASKS_STARTEPIN[8];
+  __O   uint32_t  TASKS_STARTISOIN;
+  __O   uint32_t  TASKS_STARTEPOUT[8];
+  __O   uint32_t  TASKS_STARTISOOUT;
+  __O   uint32_t  TASKS_EP0RCVOUT;
+  __O   uint32_t  TASKS_EP0STATUS;
+  __O   uint32_t  TASKS_EP0STALL;
+  __O   uint32_t  TASKS_DPDMDRIVE;
+  __O   uint32_t  TASKS_DPDMNODRIVE;
+  __I   uint32_t  RESERVED1[40];
+  __IO  uint32_t  EVENTS_USBRESET;
+  __IO  uint32_t  EVENTS_STARTED;
+  __IO  uint32_t  EVENTS_ENDEPIN[8];
+  __IO  uint32_t  EVENTS_EP0DATADONE;
+  __IO  uint32_t  EVENTS_ENDISOIN;
+  __IO  uint32_t  EVENTS_ENDEPOUT[8];
+  __IO  uint32_t  EVENTS_ENDISOOUT;
+  __IO  uint32_t  EVENTS_SOF;
+  __IO  uint32_t  EVENTS_USBEVENT;
+  __IO  uint32_t  EVENTS_EP0SETUP;
+  __IO  uint32_t  EVENTS_EPDATA;
+  __I   uint32_t  RESERVED2[39];
+  __IO  uint32_t  SHORTS;
+  __IO  uint32_t  RESERVED3[63];
+  __IO  uint32_t  INTEN;
+  __O   uint32_t  INTENSET;
+  __O   uint32_t  INTENCLR;
+  __I   uint32_t  RESERVED4[61];
+  __IO  uint32_t  EVENTCAUSE;
+  __I   uint32_t  RESERVED5[7];
+  __IO  uint32_t  HALTEDEPIN[8];
+  __I   uint32_t  RESERVED6;
+  __IO  uint32_t  HALTEDEPOUT[8];
+  __I   uint32_t  RESERVED7;
+  __IO  uint32_t  EPSTATUS;
+  __IO  uint32_t  EPDATASTATUS;
+  __IO  uint32_t  USBADDR;
+  __I   uint32_t  RESERVED8[3];
+
+  __IO  uint32_t  BMREQUESTTYPE;
+  __IO  uint32_t  BMREQUEST;
+  __IO  uint32_t  WVALUEL;
+  __IO  uint32_t  WVALUEH;
+  __IO  uint32_t  WINDEXL;
+  __IO  uint32_t  WINDEXH;
+  __IO  uint32_t  WLENGTHL;
+  __IO  uint32_t  WLENGTHH;
+  __IO  uint32_t  SIZEEPOUT[8];
+  __IO  uint32_t  SIZEISOOUT;
+  __I   uint32_t  RESERVED9[15];
+  __IO  uint32_t  ENABLE;
+  __IO  uint32_t  USBPULLUP;
+  __IO  uint32_t  DPDMVALUE;
+  __IO  uint32_t  DTOGGLE;
+  __IO  uint32_t  EPINEN;
+  __IO  uint32_t  EPOUTEN;
+  __IO  uint32_t  EPSTALL;
+  __IO  uint32_t  ISOSPLIT;
+  __IO  uint32_t  FRAMECNTR;
+  __I   uint32_t  RESERVED10[2];
+  __IO  uint32_t  LOWPOWER;
+  __IO  uint32_t  ISOINCONFIG;
+  __I   uint32_t  RESERVED11[51];
+  USBDPtr_t EPIN[8];
+  USBDPtr_t ISOIN;
+  __I   uint32_t  RESERVED12[19];
+  USBDPtr_t EPOUT[8];
+  USBDPtr_t ISOOUT;
 } NRF_USBD_Type;
 
 
