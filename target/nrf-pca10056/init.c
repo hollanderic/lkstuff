@@ -37,9 +37,9 @@ void target_early_init(void)
     gpio_config(GPIO_LED3, GPIO_OUTPUT);
     gpio_config(GPIO_LED4, GPIO_OUTPUT);
 
-    gpio_set(GPIO_LED1,0);
+    gpio_set(GPIO_LED1,1);
     gpio_set(GPIO_LED2,1);
-    gpio_set(GPIO_LED3,0);
+    gpio_set(GPIO_LED3,1);
     gpio_set(GPIO_LED4,1);
 
     nrf52_debug_early_init();
@@ -51,5 +51,5 @@ void target_init(void)
     nrf52_debug_init();
     dprintf(SPEW,"Target: PCA10056 DK...\n");
 
-    nrf52_usbd_init();
+    //nrf52_usbd_init();
 }

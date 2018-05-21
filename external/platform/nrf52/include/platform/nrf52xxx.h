@@ -580,30 +580,35 @@ typedef struct {                                    /*!< POWER Structure        
   __I  uint32_t  RESERVED2[2];
   __IO uint32_t  EVENTS_SLEEPENTER;                 /*!< CPU entered WFI/WFE sleep                                             */
   __IO uint32_t  EVENTS_SLEEPEXIT;                  /*!< CPU exited WFI/WFE sleep                                              */
-  __I  uint32_t  RESERVED3[122];
+  __IO uint32_t  EVENTS_USBDETECTED;                /*!< Voltage supply detected on VBUS                                       */
+  __IO uint32_t  EVENTS_USBREMOVED;                 /*!< Voltage supply removed from VBUS                                      */
+  __IO uint32_t  EVENTS_USBPWRRDY;                  /*!< USB 3.3 V supply ready                                                */
+  __I  uint32_t  RESERVED3[119];
   __IO uint32_t  INTENSET;                          /*!< Enable interrupt                                                      */
   __IO uint32_t  INTENCLR;                          /*!< Disable interrupt                                                     */
   __I  uint32_t  RESERVED4[61];
   __IO uint32_t  RESETREAS;                         /*!< Reset reason                                                          */
   __I  uint32_t  RESERVED5[9];
   __I  uint32_t  RAMSTATUS;                         /*!< Deprecated register - RAM status register                             */
-  __I  uint32_t  RESERVED6[53];
+  __I  uint32_t  RESERVED6[3];
+  __I  uint32_t  USBREGSTATUS;                      /*!< USB supply status                                                     */
+  __I  uint32_t  RESERVED7[49];
   __O  uint32_t  SYSTEMOFF;                         /*!< System OFF register                                                   */
-  __I  uint32_t  RESERVED7[3];
+  __I  uint32_t  RESERVED8[3];
   __IO uint32_t  POFCON;                            /*!< Power failure comparator configuration                                */
-  __I  uint32_t  RESERVED8[2];
+  __I  uint32_t  RESERVED9[2];
   __IO uint32_t  GPREGRET;                          /*!< General purpose retention register                                    */
   __IO uint32_t  GPREGRET2;                         /*!< General purpose retention register                                    */
-  __IO uint32_t  RAMON;                             /*!< Deprecated register - RAM on/off register (this register is
-                                                         retained)                                                             */
-  __I  uint32_t  RESERVED9[11];
-  __IO uint32_t  RAMONB;                            /*!< Deprecated register - RAM on/off register (this register is
-                                                         retained)                                                             */
-  __I  uint32_t  RESERVED10[8];
-  __IO uint32_t  DCDCEN;                            /*!< DC/DC enable register                                                 */
-  __I  uint32_t  RESERVED11[225];
-  POWER_RAM_Type RAM[8];                            /*!< Unspecified                                                           */
+  __I  uint32_t  RESERVED10[21];
+  __IO uint32_t  DCDCEN;                            /*!< Enable DC/DC converter for REG1 stage.                                */
+  __I  uint32_t  RESERVED11;
+  __IO uint32_t  DCDCEN0;                           /*!< Enable DC/DC converter for REG0 stage.                                */
+  __I  uint32_t  RESERVED12[47];
+  __I  uint32_t  MAINREGSTATUS;                     /*!< Main supply status                                                    */
+  __I  uint32_t  RESERVED13[175];
+  POWER_RAM_Type RAM[9];                            /*!< Unspecified                                                           */
 } NRF_POWER_Type;
+
 
 
 /* ================================================================================ */

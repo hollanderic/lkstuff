@@ -59,22 +59,26 @@ void uart_init_early(void)
     NRF_UART0->BAUDRATE =   UART_BAUDRATE_BAUDRATE_Baud115200   <<  UART_BAUDRATE_BAUDRATE_Pos;
     NRF_UART0->CONFIG   =   UART_CONFIG_HWFC_Disabled << UART_CONFIG_HWFC_Pos | \
                             UART_CONFIG_PARITY_Excluded << UART_CONFIG_PARITY_Pos;
-    NVIC_DisableIRQ(UARTE0_UART0_IRQn);
+    //NVIC_EnableIRQ(UARTE0_UART0_IRQn);
     NRF_UART0->ENABLE   =   UART_ENABLE_ENABLE_Enabled << UART_ENABLE_ENABLE_Pos;
+    NRF_UART0->TXD = 'L';
     NRF_UART0->TASKS_STARTTX=1;
-    NRF_UART0->TASKS_STARTRX=1;
+
 #endif //ENABLE_UART0
 }
 
 void uart_init(void)
 {
 #ifdef ENABLE_UART0
+        gpio_set(GPIO_LED2,0);
+
     cbuf_initialize(&uart0_rx_buf, RXBUF_SIZE);
     NRF_UART0->INTENSET = UART_INTENSET_RXDRDY_Enabled << UART_INTENSET_RXDRDY_Pos;
     NRF_UART0->EVENTS_RXDRDY = 0;
     NVIC_EnableIRQ(UARTE0_UART0_IRQn);
     char c = NRF_UART0->RXD;
     (void)c;
+    NRF_UART0->TASKS_STARTRX=1;
 #endif //ENABLE_UART0
 }
 
@@ -82,7 +86,7 @@ void nrf52_UARTE0_UART0_IRQ(void)
 {
     char c;
     arm_cm_irq_entry();
-
+    gpio_set(GPIO_LED1,0);
     bool resched = false;
     while ( NRF_UART0->EVENTS_RXDRDY > 0 ) {
         NRF_UART0->EVENTS_RXDRDY = 0;

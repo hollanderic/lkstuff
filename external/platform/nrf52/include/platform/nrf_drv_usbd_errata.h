@@ -137,5 +137,10 @@ static inline bool nrf_drv_usbd_errata_sizeepout_rw(void)
     return NRF_DRV_USBD_ERRATA_ENABLE && nrf_drv_usbd_errata_type_52840_proto1();
 }
 
+
+void fix_errata_104(uint8_t m_dma_pending, uint32_t enabled,
+                    uint32_t* active, uint32_t *m_simulated_dataepstatus);
+
+
 /** @} */
 #endif /* NRF_DRV_USBD_ERRATA_H__ */
