@@ -22,22 +22,32 @@
  */
 #include <app.h>
 #include <debug.h>
+#include <kernel/thread.h>
 #include <lib/console.h>
 #include <dev/gpio.h>
 #include <target/gpioconfig.h>
+#include <platform/spim.h>
+
 #include <platform.h>
 
 
 
 #define LED_CLK 15
 #define LED_DATA 16
-#define LED_A 5
-#define LED_B 6
-#define LED_C 7
-#define LED_D 8
+
+
+#define LED_A 22
+#define LED_B 23
+#define LED_C 24
+#define LED_D 25
 
 #define LED_OE 21
 #define LED_STRB 17
+
+static uint8_t fbuf[128];
+
+
+static uint8_t channel=0;
 
 
 void shift(void);
@@ -50,12 +60,40 @@ STATIC_COMMAND("time", "get current_time", (console_cmd)&curr_t)
 STATIC_COMMAND("htime", "get current_time_high_res", (console_cmd)&hcurr_t)
 
 STATIC_COMMAND_END(ledz);
+int spi_callback(int input);
+static nrf_spim_dev_t spim0 = {
+    .instance = NRF_SPIM0,
+    .sclk_pin = LED_CLK,
+    .mosi_pin = LED_DATA,
+    .miso_pin = 0x80000000,
+    .speed = SPIM_SPEED_8M,
+    .cb = spi_callback };
 
 
 static void delay(uint32_t d) {
     lk_bigtime_t start = current_time_hires();
     while (start + d > current_time_hires());
 }
+
+int spi_callback(int input) {
+    channel++;
+    gpio_set(LED_OE, 1);
+    gpio_set(LED_STRB, 1);
+    gpio_set(LED_A, (channel & 0x01) ? 1 : 0);
+    gpio_set(LED_B, (channel & 0x02) ? 1 : 0);
+    gpio_set(LED_C, (channel & 0x04) ? 1 : 0);
+    gpio_set(LED_D, (channel & 0x08) ? 1 : 0);
+
+    gpio_set(LED_STRB, 0);
+    gpio_set(LED_OE, 0);
+    nrf_spim_send(&spim0, fbuf, 8);
+    return 0;
+}
+
+static thread_t *tester;
+
+
+
 
 void curr_t(void){
     dprintf(SPEW,"%u\n", current_time());
@@ -68,19 +106,46 @@ void hcurr_t(void){
 
 void shift(void)
 {
-    gpio_set(LED_DATA, 0);
-    for(int i = 0; i < 64*6; i++) {
+        nrf_spim_send(&spim0, fbuf, 8);
+#if 0
+    gpio_set(LED_DATA, 1);
+    for(int i = 0; i < 10; i++) {
         gpio_set(LED_CLK, 1);
         delay(1);
         gpio_set(LED_CLK, 0);
         delay(1);
     }
+    gpio_set(LED_DATA, 0);
+    for(int i = 0; i < 10; i++) {
+        gpio_set(LED_CLK, 1);
+        delay(1);
+        gpio_set(LED_CLK, 0);
+        delay(1);
+    }
+    gpio_set(LED_OE, 1);
+
     gpio_set(LED_STRB, 1);
-    delay(1);
+    delay(10);
     gpio_set(LED_STRB, 0);
     gpio_set(LED_OE, 0);
     gpio_set(LED_CLK, 0);
+#endif
 }
+
+
+static int loopfunc(void *arg)
+{
+    while(1) {
+        channel++;
+        gpio_set(LED_A, (channel & 0x01) ? 1 : 0);
+        gpio_set(LED_B, (channel & 0x02) ? 1 : 0);
+        gpio_set(LED_C, (channel & 0x04) ? 1 : 0);
+        gpio_set(LED_D, (channel & 0x08) ? 1 : 0);
+        thread_sleep(1);
+    }
+    return 0;
+}
+
 
 
 
@@ -96,8 +161,8 @@ static void ledz_init(const struct app_descriptor *app)
     gpio_config(LED_STRB, GPIO_OUTPUT);
 
 
-    gpio_set(LED_A, 0);
-    gpio_set(LED_B, 0);
+    gpio_set(LED_A, 1);
+    gpio_set(LED_B, 1);
     gpio_set(LED_C, 0);
     gpio_set(LED_D, 0);
 
@@ -107,7 +172,17 @@ static void ledz_init(const struct app_descriptor *app)
     gpio_set(LED_CLK, 0);
     gpio_set(LED_STRB, 0);
 
+    for(int i = 0; i < sizeof(fbuf); i++) {
+        fbuf[i] = 0x55;
+    }
 
+
+    nrf_spim_init(&spim0);
+
+    nrf_spim_send(&spim0, fbuf, 8);
+
+    //tester = thread_create("looper thread", loopfunc, (void *)1, LOW_PRIORITY, DEFAULT_STACK_SIZE);
+    //thread_resume(tester);
 
 
 
