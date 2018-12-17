@@ -44,7 +44,11 @@
 #define LED_OE 21
 #define LED_STRB 17
 
-static uint8_t fbuf[128];
+//For this to work, daisy chain all six segments together
+#define COLUMNS (64*2*3)
+#define ROWS (16)
+
+static uint8_t fbuf[COLUMNS * ROWS / 8];
 
 
 static uint8_t channel=0;
@@ -106,47 +110,8 @@ void hcurr_t(void){
 
 void shift(void)
 {
-        nrf_spim_send(&spim0, fbuf, 8);
-#if 0
-    gpio_set(LED_DATA, 1);
-    for(int i = 0; i < 10; i++) {
-        gpio_set(LED_CLK, 1);
-        delay(1);
-        gpio_set(LED_CLK, 0);
-        delay(1);
-    }
-    gpio_set(LED_DATA, 0);
-    for(int i = 0; i < 10; i++) {
-        gpio_set(LED_CLK, 1);
-        delay(1);
-        gpio_set(LED_CLK, 0);
-        delay(1);
-    }
-    gpio_set(LED_OE, 1);
-
-    gpio_set(LED_STRB, 1);
-    delay(10);
-    gpio_set(LED_STRB, 0);
-    gpio_set(LED_OE, 0);
-    gpio_set(LED_CLK, 0);
-#endif
+        nrf_spim_send(&spim0, fbuf, COLUMNS / 8);
 }
-
-
-static int loopfunc(void *arg)
-{
-    while(1) {
-        channel++;
-        gpio_set(LED_A, (channel & 0x01) ? 1 : 0);
-        gpio_set(LED_B, (channel & 0x02) ? 1 : 0);
-        gpio_set(LED_C, (channel & 0x04) ? 1 : 0);
-        gpio_set(LED_D, (channel & 0x08) ? 1 : 0);
-        thread_sleep(1);
-    }
-    return 0;
-}
-
-
 
 
 static void ledz_init(const struct app_descriptor *app)
@@ -173,7 +138,7 @@ static void ledz_init(const struct app_descriptor *app)
     gpio_set(LED_STRB, 0);
 
     for(int i = 0; i < sizeof(fbuf); i++) {
-        fbuf[i] = 0x55;
+        fbuf[i] = 0xff;
     }
 
 
