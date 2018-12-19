@@ -78,7 +78,7 @@ void nrf52_SPIM0_SPIS0_TWIM0_TWIS0_SPI0_TWI0_IRQ(void)
 
     nrf_spim_irq_handler(NRF_SPIM0, spim0_cb);
 
-    arm_cm_irq_exit(false);
+    arm_cm_irq_exit(true);
 }
 
 

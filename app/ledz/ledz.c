@@ -80,6 +80,7 @@ static void delay(uint32_t d) {
 }
 
 int spi_callback(int input) {
+    gpio_set(GPIO_LED2, 0);
     channel++;
     gpio_set(LED_OE, 1);
     gpio_set(LED_STRB, 1);
@@ -89,7 +90,9 @@ int spi_callback(int input) {
     gpio_set(LED_D, (channel & 0x08) ? 1 : 0);
 
     gpio_set(LED_STRB, 0);
+    delay(100);
     gpio_set(LED_OE, 0);
+    gpio_set(GPIO_LED2, 1);
     nrf_spim_send(&spim0, fbuf, 8);
     return 0;
 }
