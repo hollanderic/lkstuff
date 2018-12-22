@@ -45,14 +45,17 @@
 #define LED_STRB 17
 
 //For this to work, daisy chain all six segments together
-#define COLUMNS (64*2*3)
-#define ROWS (16)
+#define COLUMNS (64)
+#define ROWS (32)
 
-static uint8_t fbuf[COLUMNS * ROWS / 8];
+//pixbuf is used to shift data out to the display in the format
+// needed by the displays configuration
+static uint8_t pixbuf[3 * COLUMNS * ROWS / 8];
 
+//Actual framebuffer in 332 format
+static uint8_t fbuf[COLUMNS * ROWS];
 
 static uint8_t channel=0;
-
 
 void shift(void);
 void curr_t(void);
@@ -73,6 +76,24 @@ static nrf_spim_dev_t spim0 = {
     .speed = SPIM_SPEED_8M,
     .cb = spi_callback };
 
+// copies the fbuf over to pixbuf
+static void convert_buf(void) {
+    for (uint32_t i = 0; i < sizeof(pixbuf); i++)
+        pixbuf[i] = 0;
+    for (uint32_t y = 0; y < ROWS; y++){
+        for(uint32_t x = 0; x < COLUMNS; x++) {
+            uint32_t color = 0;
+            uint32_t pixrow = ((3 * 2 * COLUMNS) >> 3) * (y & 0x0f);
+
+            uint32_t bitpos = ((y >> 4) * COLUMNS) + (63 - x) + (2 * COLUMNS * color);
+            bitpos = (2 * 3 * COLUMNS - 1) - bitpos;
+
+            uint8_t val = ((fbuf[COLUMNS * y + x] & 0xe0) ? 1 : 0) << (bitpos % 8);
+            //dprintf(SPEW, "%2u,%2u  %3u  %3u %02x\n", x, y, pixrow , bitpos, val);
+            pixbuf[pixrow + (bitpos >> 3)] |= ((fbuf[COLUMNS * y + x] & 0xe0) ? 1 : 0) << (bitpos % 8);
+        }
+    }
+}
 
 static void delay(uint32_t d) {
     lk_bigtime_t start = current_time_hires();
@@ -80,7 +101,6 @@ static void delay(uint32_t d) {
 }
 
 int spi_callback(int input) {
-    gpio_set(GPIO_LED2, 0);
     channel++;
     gpio_set(LED_OE, 1);
     gpio_set(LED_STRB, 1);
@@ -92,15 +112,9 @@ int spi_callback(int input) {
     gpio_set(LED_STRB, 0);
     delay(100);
     gpio_set(LED_OE, 0);
-    gpio_set(GPIO_LED2, 1);
-    nrf_spim_send(&spim0, fbuf, 8);
+    nrf_spim_send(&spim0, &pixbuf[((channel+1) & 0x0f) * 48], 48);
     return 0;
 }
-
-static thread_t *tester;
-
-
-
 
 void curr_t(void){
     dprintf(SPEW,"%u\n", current_time());
@@ -113,7 +127,8 @@ void hcurr_t(void){
 
 void shift(void)
 {
-        nrf_spim_send(&spim0, fbuf, COLUMNS / 8);
+        convert_buf();
+        //nrf_spim_send(&spim0, pixbuf, COLUMNS / 8);
 }
 
 
@@ -140,19 +155,18 @@ static void ledz_init(const struct app_descriptor *app)
     gpio_set(LED_CLK, 0);
     gpio_set(LED_STRB, 0);
 
-    for(int i = 0; i < sizeof(fbuf); i++) {
-        fbuf[i] = 0xff;
+    for(uint32_t i = 0; i < sizeof(pixbuf); i++) {
+        pixbuf[i] = 0xff;
     }
 
+    for(uint32_t y = 0; y < ROWS; y++)
+        for(uint32_t x = 0; x < COLUMNS; x++) {
+            fbuf[y * COLUMNS + x] = ( (x % 3) == 0) ? 0xff : 0;
+        }
 
     nrf_spim_init(&spim0);
 
-    nrf_spim_send(&spim0, fbuf, 8);
-
-    //tester = thread_create("looper thread", loopfunc, (void *)1, LOW_PRIORITY, DEFAULT_STACK_SIZE);
-    //thread_resume(tester);
-
-
+    nrf_spim_send(&spim0, pixbuf, 8);
 
 }
 

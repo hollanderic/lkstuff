@@ -39,13 +39,13 @@
 
 static spim_cb_t spim0_cb = NULL;
 
-
 void nrf_spim_init(nrf_spim_dev_t *spim)
 {
     spim->instance->ENABLE = 0x07;
     spim->instance->PSEL.SCK  = spim->sclk_pin;
     spim->instance->PSEL.MOSI = spim->mosi_pin;
     spim->instance->PSEL.MISO = spim->miso_pin;
+    spim->instance->CONFIG = 0x01;
     gpio_set(spim->sclk_pin, GPIO_OUTPUT);
     gpio_set(spim->mosi_pin, GPIO_OUTPUT);
 
@@ -70,8 +70,6 @@ static void nrf_spim_irq_handler(NRF_SPIM_Type *dev, spim_cb_t cb){
     }
 }
 
-
-
 void nrf52_SPIM0_SPIS0_TWIM0_TWIS0_SPI0_TWI0_IRQ(void)
 {
     arm_cm_irq_entry();
@@ -81,9 +79,8 @@ void nrf52_SPIM0_SPIS0_TWIM0_TWIS0_SPI0_TWI0_IRQ(void)
     arm_cm_irq_exit(true);
 }
 
-
 void nrf_spim_send(nrf_spim_dev_t *spim, uint8_t *buf, uint32_t len) {
-    spim->instance->TXD.PTR = buf;
+    spim->instance->TXD.PTR = (uint32_t)buf;
     spim->instance->TXD.MAXCNT = len;
     if (spim->cb) {
         spim->instance->EVENTS_ENDTX = 0;

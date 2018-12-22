@@ -47,9 +47,9 @@ typedef enum {
 
 typedef struct {
     NRF_SPIM_Type *instance;
-    uint8_t    sclk_pin;
-    uint8_t    mosi_pin;
-    uint8_t    miso_pin;
+    uint32_t    sclk_pin;
+    uint32_t    mosi_pin;
+    uint32_t    miso_pin;
     spim_speed_t   speed;
     spim_cb_t  cb;
 } nrf_spim_dev_t;
