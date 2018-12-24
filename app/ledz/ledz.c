@@ -76,21 +76,24 @@ static nrf_spim_dev_t spim0 = {
     .speed = SPIM_SPEED_8M,
     .cb = spi_callback };
 
+
+static inline uint32_t bitindex(uint32_t x, uint32_t y, uint32_t color) {
+    return (2 * 3 * COLUMNS - 1) - (((y >> 4) * COLUMNS) + (63 - x) + (2 * COLUMNS * color));
+}
+
 // copies the fbuf over to pixbuf
 static void convert_buf(void) {
     for (uint32_t i = 0; i < sizeof(pixbuf); i++)
         pixbuf[i] = 0;
     for (uint32_t y = 0; y < ROWS; y++){
         for(uint32_t x = 0; x < COLUMNS; x++) {
-            uint32_t color = 0;
             uint32_t pixrow = ((3 * 2 * COLUMNS) >> 3) * (y & 0x0f);
-
-            uint32_t bitpos = ((y >> 4) * COLUMNS) + (63 - x) + (2 * COLUMNS * color);
-            bitpos = (2 * 3 * COLUMNS - 1) - bitpos;
-
-            uint8_t val = ((fbuf[COLUMNS * y + x] & 0xe0) ? 1 : 0) << (bitpos % 8);
-            //dprintf(SPEW, "%2u,%2u  %3u  %3u %02x\n", x, y, pixrow , bitpos, val);
+            uint32_t bitpos = bitindex(x, y, 0);
             pixbuf[pixrow + (bitpos >> 3)] |= ((fbuf[COLUMNS * y + x] & 0xe0) ? 1 : 0) << (bitpos % 8);
+            bitpos = bitindex(x, y, 1);
+            pixbuf[pixrow + (bitpos >> 3)] |= ((fbuf[COLUMNS * y + x] & 0x1c) ? 1 : 0) << (bitpos % 8);
+            bitpos = bitindex(x, y, 2);
+            pixbuf[pixrow + (bitpos >> 3)] |= ((fbuf[COLUMNS * y + x] & 0x03) ? 1 : 0) << (bitpos % 8);
         }
     }
 }
@@ -143,15 +146,6 @@ static void ledz_init(const struct app_descriptor *app)
     gpio_config(LED_OE, GPIO_OUTPUT);
     gpio_config(LED_STRB, GPIO_OUTPUT);
 
-
-    gpio_set(LED_A, 1);
-    gpio_set(LED_B, 1);
-    gpio_set(LED_C, 0);
-    gpio_set(LED_D, 0);
-
-    gpio_set(GPIO_LED1,0);
-    gpio_set(GPIO_LED2,0);
-
     gpio_set(LED_CLK, 0);
     gpio_set(LED_STRB, 0);
 
@@ -161,7 +155,17 @@ static void ledz_init(const struct app_descriptor *app)
 
     for(uint32_t y = 0; y < ROWS; y++)
         for(uint32_t x = 0; x < COLUMNS; x++) {
-            fbuf[y * COLUMNS + x] = ( (x % 3) == 0) ? 0xff : 0;
+            switch (x % 3) {
+                case 0:
+                    fbuf[y * COLUMNS + x] = 0xe0;
+                    break;
+                case 1:
+                    fbuf[y * COLUMNS + x] = 0x1c;
+                    break;
+                case 2:
+                    fbuf[y * COLUMNS + x] = 0x03;
+                    break;
+            }
         }
 
     nrf_spim_init(&spim0);
