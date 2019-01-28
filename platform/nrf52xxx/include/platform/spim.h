@@ -23,7 +23,7 @@
 
 #ifndef __PLATFORM_NRF52_SPIM_H
 #define __PLATFORM_NRF52_SPIM_H
-
+#include <platform/nrf52xxx.h>
 
 #define NRF_SPIM_EVENT_STOPPED 0x00000002
 #define NRF_SPIM_EVENT_ENDRX 0x00000010
