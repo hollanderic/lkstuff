@@ -236,7 +236,9 @@ void OLED_Display(void)
     uint16_t page, Column;
     COLOR *pBuf = (COLOR *)Buffer;
 
-    OLED_SetWindow(0, 0, sOLED_DIS.OLED_Dis_Column, sOLED_DIS.OLED_Dis_Page);
+//    OLED_SetWindow(0, 0, sOLED_DIS.OLED_Dis_Column, sOLED_DIS.OLED_Dis_Page);
+    OLED_SetWindow(0, 0, 32, 127);//sOLED_DIS.OLED_Dis_Column, sOLED_DIS.OLED_Dis_Page);
+
     //write data
     for (page = 0; page < sOLED_DIS.OLED_Dis_Page; page++) {
         for(Column = 0; Column < sOLED_DIS.OLED_Dis_Column / 2; Column++ ) {

@@ -63,6 +63,9 @@ static thread_t *tester;
 
 void curr_t(void){
     dprintf(SPEW,"%u\n", current_time());
+    //System_Init();
+    //OLED_Reset();
+    OLED_Clear(0x00);
     OLED_Display();
 }
 

@@ -14,6 +14,8 @@
 
 #include "pin_config.h"
 
+bool spimdone = true;
+
 int spi_callback(int input);
 static nrf_spim_dev_t spim0 = {
     .instance = NRF_SPIM0,
@@ -21,7 +23,7 @@ static nrf_spim_dev_t spim0 = {
     .mosi_pin = MOSI_PIN,
     .miso_pin = 0x80000000,
     .speed = SPIM_SPEED_8M,
-    .cb = spi_callback };
+    .cb = NULL};//spi_callback };
 
 int spi_callback(int input) {
 #if 0
@@ -36,6 +38,7 @@ int spi_callback(int input) {
     gpio_set(LED_OE, 0);
     nrf_spim_send(&spim0, fbuf, 8);
 #endif
+    spimdone = true;
     return 0;
 }
 
@@ -68,7 +71,13 @@ note:
 ********************************************************************************/
 uint8_t SPI4W_Write_Byte(uint8_t value)
 {
+    spimdone = false;
+    //printf("writing byte\n");
     nrf_spim_send(&spim0, &value, 1);
+    //printf("waiting\n");
+    //while (!spimdone);;
+    //printf("waited\n");
+
     return 1;
 }
 
@@ -80,7 +89,14 @@ note:
 ********************************************************************************/
 void Driver_Delay_ms(uint32_t xms)
 {
-    Driver_Delay_us(xms*1000);
+
+
+
+    lk_bigtime_t start = current_time_hires();
+    while (start + xms*1000 > current_time_hires());
+
+
+
 }
 
 void Driver_Delay_us(uint32_t xus)

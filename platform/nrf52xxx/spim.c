@@ -85,9 +85,12 @@ void nrf52_SPIM0_SPIS0_TWIM0_TWIS0_SPI0_TWI0_IRQ(void)
 void nrf_spim_send(nrf_spim_dev_t *spim, uint8_t *buf, uint32_t len) {
     spim->instance->TXD.PTR = buf;
     spim->instance->TXD.MAXCNT = len;
+    spim->instance->EVENTS_ENDTX = 0;
     if (spim->cb) {
-        spim->instance->EVENTS_ENDTX = 0;
         spim->instance->INTENSET = NRF_SPIM_EVENT_ENDTX;
+        spim->instance->TASKS_START = 1;
+    } else {
+        spim->instance->TASKS_START = 1;
+        while (!spim->instance->EVENTS_ENDTX){}
     }
-    spim->instance->TASKS_START = 1;
 }
