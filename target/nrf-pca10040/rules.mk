@@ -8,10 +8,15 @@ PLATFORM := nrf52xxx
 
 GLOBAL_DEFINES += \
 	ENABLE_UART0=1 \
-	
+
 
 MODULE_SRCS += \
 	$(LOCAL_DIR)/init.c
+
+MODULE_DEPS += \
+    lib/gfx \
+    lib/gfxconsole \
+
 
 include make/module.mk
 

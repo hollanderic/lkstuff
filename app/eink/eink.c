@@ -28,7 +28,8 @@
 
 #include <platform.h>
 
-#include "ws_oled.h"
+#include "ws_eink.h"
+#include "image.c"
 
 //static uint8_t fbuf[COLUMNS * ROWS / 8];
 
@@ -36,14 +37,14 @@
 static uint8_t channel=0;
 
 
-void curr_t(void);
-void hcurr_t(void);
+void draw(void);
+void clear(void);
 
 STATIC_COMMAND_START
-STATIC_COMMAND("display", "run oled_display", (console_cmd)&curr_t)
-STATIC_COMMAND("htime", "get current_time_high_res", (console_cmd)&hcurr_t)
+STATIC_COMMAND("display", "Draw e-ink display", (console_cmd)&draw)
+STATIC_COMMAND("clear", "Clear e-ink display", (console_cmd)&clear)
 
-STATIC_COMMAND_END(oled);
+STATIC_COMMAND_END(eink);
 
 
 
@@ -59,31 +60,32 @@ static thread_t *tester;
 
 
 
-void curr_t(void){
+void draw(void){
     dprintf(SPEW,"updated %u\n", current_time());
-    ws_oled_display();
+    ws_eink_display(IMAGE_BLACK, IMAGE_RED);
 
 }
 
-void hcurr_t(void){
+void clear(void){
     lk_bigtime_t x = current_time_hires();
     dprintf(SPEW, "%llu usec\n", x);
+    ws_eink_clear();
 }
 
 
-static void oled_init(const struct app_descriptor *app)
+static void eink_init(const struct app_descriptor *app)
 {
-    ws_oled_init();
+    ws_eink_init();
 
 }
 
-static void oled_entry(const struct app_descriptor *app, void *args)
+static void eink_entry(const struct app_descriptor *app, void *args)
 {
 
 }
 
-APP_START(oled)
-.init = oled_init,
-.entry = oled_entry,
+APP_START(eink)
+.init = eink_init,
+.entry = eink_entry,
 APP_END
 

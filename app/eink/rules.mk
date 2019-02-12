@@ -6,7 +6,7 @@ MODULE_DEPS += \
 	lib/console
 
 MODULE_SRCS += \
-	$(LOCAL_DIR)/oled.c \
-	$(LOCAL_DIR)/ws_oled.c \
+	$(LOCAL_DIR)/eink.c \
+	$(LOCAL_DIR)/ws_eink.c \
 
 include make/module.mk

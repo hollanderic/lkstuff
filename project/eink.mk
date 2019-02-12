@@ -1,7 +1,8 @@
 MODULES += \
 	app/shell \
     app/tests \
-    lib/gfxconsole \
+    app/eink \
+
 
 
 
