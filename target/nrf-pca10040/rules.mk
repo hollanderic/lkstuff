@@ -17,6 +17,5 @@ MODULE_DEPS += \
     lib/gfx \
     lib/gfxconsole \
 
-
 include make/module.mk
 
