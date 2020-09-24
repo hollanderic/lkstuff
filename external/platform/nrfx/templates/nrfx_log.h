@@ -58,7 +58,9 @@ extern "C" {
  * @param format printf-style format string, optionally followed by arguments
  *               to be formatted and inserted in the resulting string.
  */
-#define NRFX_LOG_ERROR(a...) dprintf(CRITICAL, a)
+#define NRFX_LOG_ERROR(a...) dprintf(CRITICAL, "NRFX_ERROR:"); \
+                             dprintf(CRITICAL, a); \
+                             dprintf(CRITICAL,"\n")
 
 /**
  * @brief Macro for logging a message with the severity level WARNING.
@@ -66,7 +68,9 @@ extern "C" {
  * @param format printf-style format string, optionally followed by arguments
  *               to be formatted and inserted in the resulting string.
  */
-#define NRFX_LOG_WARNING(a...) dprintf(INFO, a)
+#define NRFX_LOG_WARNING(a...) dprintf(INFO, "NRFX_WARNING:"); \
+                               dprintf(INFO, a); \
+                               dprintf(INFO,"\n")
 
 /**
  * @brief Macro for logging a message with the severity level INFO.
@@ -74,7 +78,9 @@ extern "C" {
  * @param format printf-style format string, optionally followed by arguments
  *               to be formatted and inserted in the resulting string.
  */
-#define NRFX_LOG_INFO(a...) dprintf(INFO, a)
+#define NRFX_LOG_INFO(a...) dprintf(INFO, "NRFX_INFO:"); \
+                            dprintf(INFO, a); \
+                            dprintf(INFO,"\n")
 
 /**
  * @brief Macro for logging a message with the severity level DEBUG.
@@ -82,7 +88,9 @@ extern "C" {
  * @param format printf-style format string, optionally followed by arguments
  *               to be formatted and inserted in the resulting string.
  */
-#define NRFX_LOG_DEBUG(a...) dprintf(SPEW, a)
+#define NRFX_LOG_DEBUG(a...) dprintf(SPEW, "NRFX_DEBUG:"); \
+                             dprintf(SPEW, a); \
+                             dprintf(SPEW,"\n")
 
 
 /**
@@ -125,9 +133,37 @@ extern "C" {
  *
  * @return String containing the textual representation of the error code.
  */
-#define NRFX_LOG_ERROR_STRING_GET(error_code)
+#define NRFX_LOG_ERROR_STRING_GET(error_code) nrfx_get_err_str(error_code)
 
 /** @} */
+#define NRFX_ERR_STRING(x) \
+  case NRFX_ERROR_##x: \
+   return "NRFX_ERROR_"#x;
+
+static inline const char* nrfx_get_err_str(nrfx_err_t code) {
+  switch(code) {
+    case NRFX_SUCCESS:
+      return "NRFX_SUCCESS";
+    case NRFX_ERROR_NULL:
+      return "NRFX_ERROR_NULL";
+    NRFX_ERR_STRING(INTERNAL)
+    NRFX_ERR_STRING(NO_MEM)
+    NRFX_ERR_STRING(NOT_SUPPORTED)
+    NRFX_ERR_STRING(INVALID_PARAM)
+    NRFX_ERR_STRING(INVALID_STATE)
+    NRFX_ERR_STRING(INVALID_LENGTH)
+    NRFX_ERR_STRING(TIMEOUT)
+    NRFX_ERR_STRING(FORBIDDEN)
+    NRFX_ERR_STRING(INVALID_ADDR)
+    NRFX_ERR_STRING(BUSY)
+    NRFX_ERR_STRING(ALREADY_INITIALIZED)
+    NRFX_ERR_STRING(DRV_TWI_ERR_OVERRUN)
+    NRFX_ERR_STRING(DRV_TWI_ERR_ANACK)
+    NRFX_ERR_STRING(DRV_TWI_ERR_DNACK)
+    default:
+      return "UNKNOWN NRFX ERROR CODE";
+  }
+}
 
 #ifdef __cplusplus
 }
