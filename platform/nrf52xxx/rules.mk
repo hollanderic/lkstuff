@@ -37,6 +37,7 @@ GLOBAL_DEFINES += \
 	MEMSIZE=$(MEMSIZE)
 
 MODULE_SRCS += \
+	$(LOCAL_DIR)/i2c_master.c \
 	$(LOCAL_DIR)/init.c \
 	$(LOCAL_DIR)/debug.c \
 	$(LOCAL_DIR)/uart.c \

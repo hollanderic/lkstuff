@@ -8,6 +8,7 @@
 #include <lk/err.h>
 #include <lk/debug.h>
 #include <arch/arm/cm.h>
+#include <dev/i2c.h>
 #include <dev/uart.h>
 #include <platform.h>
 #include <nrfx.h>
@@ -17,6 +18,7 @@ void platform_early_init(void) {
     // Crank up the clock before initing timers.
     SystemInit();
     arm_cm_systick_init(32768);
+    //i2c_init();
 }
 
 void platform_init(void) {
@@ -31,4 +33,5 @@ void platform_init(void) {
             (NRF_FICR->DEVICEADDR[0] >> 16) & 0xFF, \
             (NRF_FICR->DEVICEADDR[0] >>  8) & 0xFF, \
             (NRF_FICR->DEVICEADDR[0] >>  0) & 0xFF);
+    i2c_init();
 }
