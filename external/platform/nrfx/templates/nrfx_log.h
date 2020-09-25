@@ -43,6 +43,10 @@
 extern "C" {
 #endif
 
+
+#ifndef NRFX_ENABLE_LOGGING
+#define NRFX_ENABLE_LOGGING 0
+#endif
 /**
  * @defgroup nrfx_log nrfx_log.h
  * @{
@@ -52,15 +56,20 @@ extern "C" {
  *        the needs of the host environment into which @em nrfx is integrated.
  */
 
+
 /**
  * @brief Macro for logging a message with the severity level ERROR.
  *
  * @param format printf-style format string, optionally followed by arguments
  *               to be formatted and inserted in the resulting string.
  */
+#if NRFX_ENABLE_LOGGING
 #define NRFX_LOG_ERROR(a...) dprintf(CRITICAL, "NRFX_ERROR:"); \
                              dprintf(CRITICAL, a); \
                              dprintf(CRITICAL,"\n")
+#else
+#define NRFX_LOG_ERROR(a...)
+#endif
 
 /**
  * @brief Macro for logging a message with the severity level WARNING.
@@ -68,30 +77,39 @@ extern "C" {
  * @param format printf-style format string, optionally followed by arguments
  *               to be formatted and inserted in the resulting string.
  */
+#if NRFX_ENABLE_LOGGING
 #define NRFX_LOG_WARNING(a...) dprintf(INFO, "NRFX_WARNING:"); \
                                dprintf(INFO, a); \
                                dprintf(INFO,"\n")
-
+#else
+#define NRFX_LOG_WARNING(a...)
+#endif
 /**
  * @brief Macro for logging a message with the severity level INFO.
  *
  * @param format printf-style format string, optionally followed by arguments
  *               to be formatted and inserted in the resulting string.
  */
+#if NRFX_ENABLE_LOGGING
 #define NRFX_LOG_INFO(a...) dprintf(INFO, "NRFX_INFO:"); \
                             dprintf(INFO, a); \
                             dprintf(INFO,"\n")
-
+#else
+#define NRFX_LOG_INFO(a...)
+#endif
 /**
  * @brief Macro for logging a message with the severity level DEBUG.
  *
  * @param format printf-style format string, optionally followed by arguments
  *               to be formatted and inserted in the resulting string.
  */
+#if NRFX_ENABLE_LOGGING
 #define NRFX_LOG_DEBUG(a...) dprintf(SPEW, "NRFX_DEBUG:"); \
                              dprintf(SPEW, a); \
                              dprintf(SPEW,"\n")
-
+#else
+#define NRFX_LOG_DEBUG(a...)
+#endif
 
 /**
  * @brief Macro for logging a memory dump with the severity level ERROR.

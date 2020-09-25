@@ -82,10 +82,6 @@ static inline twim_dev_t *get_nrfx_twim(int bus) {
     }
 }
 
-static uint8_t tx_buff[16] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
-//static uint8_t rx_buff[32];
-
-
 void i2c_twim_evt_handler(nrfx_twim_evt_t const *p_event,void *p_context) {
     twim_dev_t *twim = (twim_dev_t *)p_context;
     twim->result = p_event->type;
@@ -108,9 +104,6 @@ void i2c_init() {
     } else {
         NRFX_LOG_ERROR("ERROR in twim0 init:%s \n",NRFX_LOG_ERROR_STRING_GET(status));
     }
-
-    i2c_transmit(0, 0x77, tx_buff, 8);
-    i2c_transmit(0, 0x77, tx_buff, 8);
 #endif
 
 #if (NRFX_TWIM1_ENABLED)
