@@ -20,7 +20,7 @@ status_t bmp280_init(bmp280_dev_t *dev) {
   status_t status;
   uint8_t regval;
   //check chip id
-  status = bmp280_read_regs(dev, BMP280_REG_CHIP_ID, &regval, 1);
+  status = bmp280_read_regs(dev, BMP280_REG_CHIP_ID, &regval, sizeof(regval));
 
   if ((regval != BMP280_CHIP_ID_VALUE) || (status != NO_ERROR)){
     dev->initialized = false;
@@ -31,8 +31,8 @@ status_t bmp280_init(bmp280_dev_t *dev) {
   BMP280_TRACE(ALWAYS, "chip_id = 0x%02x\n", regval);
   do {
     status = bmp280_read_regs(dev, BMP280_REG_STATUS, &regval, 1);
-    if (staus != NO_ERROR) goto init_exit;
-  while ((regval & (BMP_STATUS_MEASURING | BMP_STATUS_UPDATING)) != 0)
+    if (status != NO_ERROR) goto init_exit;
+  } while ((regval & (BMP280_STATUS_MEASURING | BMP280_STATUS_UPDATING)) != 0);
 
   status = bmp280_read_regs(dev, BMP280_REG_DIG_T1, (uint8_t*)&dev->calib_data, sizeof(dev->calib_data));
 
@@ -40,12 +40,33 @@ init_exit:
   dev->initialized = (status == NO_ERROR);
 
   if (dev->initialized) {
-    bmp280_dump_calib_data(&calib_data);
+    bmp280_dump_calib_data(&dev->calib_data);
   }
   mutex_release(&dev->lock);
   return status;
 }
 
+status_t bmp280_set_config(bmp280_dev_t *dev, bmp280_config_t *config) {
+  uint8_t config_reg, ctl_reg;
+
+  config_reg = (config->tstby << BMP280_CONFIG_T_SB_POS) |
+               (config->filt << BMP280_CONFIG_FILTER_POS);
+
+  ctl_reg = (config->mode << BMP280_CTL_MEAS_MODE_POS) |
+            (config->posr << BMP280_CTL_MEAS_OSRS_P_POS) |
+            (config->tosr << BMP280_CTL_MEAS_OSRS_T_POS);
+
+  status_t status = bmp280_write_regs(dev, BMP280_REG_CONFIG, &config_reg, sizeof(config_reg));
+  if (status != NO_ERROR) {
+    return status;
+  }
+  return bmp280_write_regs(dev, BMP280_REG_CTL_MEAS, &ctl_reg, sizeof(ctl_reg));
+}
+
+
+
+
+#if 0
 // Returns temperature in DegC, resolution is 0.01 DegC. Output value of “5123” equals 51.23 DegC.
 // t_fine carries fine temperature as global value
 BMP280_S32_t t_fine;
@@ -81,3 +102,4 @@ var1 = (((BMP280_S64_t)dig_P9) * (p>>13) * (p>>13)) >> 25;
 var2 = (((BMP280_S64_t)dig_P8) * p) >> 19;
 p = ((p + var1 + var2) >> 8) + (((BMP280_S64_t)dig_P7)<<4);
 return (BMP280_U32_t)p;
+#endif
