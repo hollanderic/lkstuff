@@ -11,9 +11,20 @@
 #include <lk/compiler.h>
 #include <nrfx_usbd.h>
 #include <dev/gpio.h>
+#include <dev/sensor/bmp280.h>
 #include <platform/gpio.h>
 #include <platform/nrf52.h>
 #include <target/gpioconfig.h>
+
+static bmp280_dev_t *bmp280_dev;
+
+static bmp280_config_t bmp_config = {
+    BMP280_POSR_X16,
+    BMP280_TOSR_X16,
+    BMP280_TSTBY_MS_0P5,
+    BMP280_MODE_NORMAL,
+    BMP280_FILT_16
+};
 
 void target_early_init(void) {
     gpio_config(GPIO_LED1, GPIO_OUTPUT);
@@ -29,16 +40,15 @@ void target_early_init(void) {
     nrf52_debug_early_init();
 }
 
-
 static void target_usb_init(void) {
 
 
 }
 
-
 void target_init(void) {
     nrf52_debug_init();
     dprintf(SPEW,"Target: PCA10056 DK...\n");
+    bmp280_dev = bmp280_init(0, BMP280_I2C_ADDR, &bmp_config);
 }
 
 
