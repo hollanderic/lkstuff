@@ -7,6 +7,7 @@
  */
 #include <kernel/mutex.h>
 #include <lk/debug.h>
+#include <lk/list.h>
 #include <dev/i2c.h>
 #include <sys/types.h>
 
@@ -60,7 +61,7 @@ typedef enum {
   BMP280_POSR_X2,
   BMP280_POSR_X4,
   BMP280_POSR_X8,
-  BMP280_POSR_X6,
+  BMP280_POSR_X16,
 } bmp280_pressure_osr_t;
 
 typedef enum {
@@ -69,7 +70,7 @@ typedef enum {
   BMP280_TOSR_X2,
   BMP280_TOSR_X4,
   BMP280_TOSR_X8,
-  BMP280_TOSR_X6,
+  BMP280_TOSR_X16,
 } bmp280_temperature_osr_t;
 
 typedef enum {
@@ -114,11 +115,12 @@ typedef struct bmp280_calib_data {
 } bmp280_calib_data_t;
 
 typedef struct bmp280_dev {
+  struct list_node node;
   int bus;       // i2c bus instance
   int i2c_addr;  // device i2c address (7-bit, no rd/wr bit)
   mutex_t lock;
   bmp280_calib_data_t calib_data;
-  volatile bool initialized;
+  int idx;
 } bmp280_dev_t;
 
 typedef struct bmp280_config {
@@ -129,12 +131,13 @@ typedef struct bmp280_config {
   bmp280_filt_t filt;
 } bmp280_config_t;
 
-status_t bmp280_init(bmp280_dev_t *dev);
+bmp280_dev_t * bmp280_init(int bus, int i2c_addr, bmp280_config_t *config);
+bmp280_dev_t * bmp280_find_dev(int bus, int i2c_addr);
+bmp280_dev_t * bmp280_get_dev_at_index(int idx);
+status_t bmp280_read_temperature(bmp280_dev_t *dev, int32_t *out);
 
 status_t bmp280_set_config(bmp280_dev_t *dev, bmp280_config_t *config);
 status_t bmp280_get_config(bmp280_dev_t *dev, bmp280_config_t *config);
-
-
 
 static inline void bmp280_dump_calib_data(bmp280_calib_data_t *data) {
   BMP280_TRACE(ALWAYS, "calibration data============\n");
