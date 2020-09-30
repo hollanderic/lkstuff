@@ -17,6 +17,7 @@
 #include <dev/sensor/bmp280.h>
 
 struct list_node dev_list = LIST_INITIAL_VALUE(dev_list);
+static mutex_t dev_list_lock = MUTEX_INITIAL_VALUE(dev_list_lock);
 
 static status_t bmp280_set_config_locked(bmp280_dev_t *dev, bmp280_config_t *config) {
     if (dev == NULL) {
@@ -45,17 +46,34 @@ static status_t bmp280_set_config_locked(bmp280_dev_t *dev, bmp280_config_t *con
     return status;
 }
 
+bmp280_dev_t *bmp280_get_dev_at_index(int idx) {
+    bmp280_dev_t *dev = NULL;
+    mutex_acquire(&dev_list_lock);
+    if ((size_t)idx >= list_length(&dev_list)) { goto at_index_exit; }
+
+    dev = &(containerof(dev_list.next, bmp280_dev_t, node)[idx]);
+at_index_exit:
+    mutex_release(&dev_list_lock);
+    return dev;
+}
+
 bmp280_dev_t *bmp280_get_dev_at_addr(int bus, int i2c_addr) {
+    bmp280_dev_t *dev = NULL;
+    mutex_acquire(&dev_list_lock);
+
     if (list_is_empty(&dev_list)) {
-        return NULL;
+        goto at_addr_exit;
     }
     bmp280_dev_t *dev_ptr;
     list_for_every_entry(&dev_list, dev_ptr, bmp280_dev_t, node) {
         if ((dev_ptr->bus == bus) && (dev_ptr->i2c_addr == i2c_addr)) {
-            return dev_ptr;
+            dev = dev_ptr;
+            goto at_addr_exit;
         }
     }
-    return NULL;
+at_addr_exit:
+    mutex_release(&dev_list_lock);
+    return dev;
 }
 
 /*
@@ -109,8 +127,10 @@ bmp280_dev_t *bmp280_init(int bus, int i2c_addr, bmp280_config_t *config) {
         status = bmp280_set_config(dev, config);
     }
     if (status == NO_ERROR) {
+        mutex_acquire(&dev_list_lock);
         dev->idx = list_length(&dev_list);
         list_add_tail(&dev_list, &dev->node);
+        mutex_release(&dev_list_lock);
     }
 
 init_exit:
@@ -119,14 +139,6 @@ init_exit:
         return NULL;
     }
     return dev;
-}
-
-bmp280_dev_t *bmp280_get_dev_at_index(int idx) {
-    if ((size_t)idx >= list_length(&dev_list)) {
-        return NULL;
-    }
-    bmp280_dev_t *devs = containerof(dev_list.next, bmp280_dev_t, node);
-    return &devs[idx];
 }
 
 status_t bmp280_set_config(bmp280_dev_t *dev, bmp280_config_t *config) {
