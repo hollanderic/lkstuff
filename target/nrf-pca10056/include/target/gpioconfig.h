@@ -18,6 +18,9 @@
 #define UART0_TX_PIN    6
 #define UART0_RX_PIN    8
 
+#define UARTE1_TX_PIN    10
+#define UARTE1_RX_PIN    9
+
 // Used in platform file  i2c_master.c for configuring twim0 (i2c)
 #define TWIM0_SCL_PIN 27
 #define TWIM0_SDA_PIN 26
