@@ -20,6 +20,14 @@
 */
 
 #if (NRFX_UARTE_ENABLED)
+
+#ifndef NRFX_UARTE_TX_BUFF_SIZE
+#define NRFX_UARTE_TX_BUFF_SIZE 128
+#endif
+#ifndef NRFX_UARTE_RX_BUFF_SIZE
+#define NRFX_UARTE_RX_BUFF_SIZE 128
+#endif
+
 #include <nrfx_log.h>
 #include <nrfx_uarte.h>
 
@@ -28,8 +36,8 @@
 #include <kernel/mutex.h>
 #include <lk/debug.h>
 #include <lk/err.h>
+#include <lib/cbuf.h>
 #include <target/gpioconfig.h>
-
 
 #define UARTE_TIMEOUT_MS 1000
 
@@ -37,15 +45,13 @@ typedef struct uarte_dev {
     nrfx_uarte_t uarte;
     event_t evt;
     mutex_t lock;
+    cbuf_t tx_buf;
+    cbuf_t rx_buf;
     nrfx_uarte_evt_type_t result;
 } uarte_dev_t;
 
+
 #if (NRFX_UARTE0_ENABLED)
-static uarte_dev_t uarte0 = { NRFX_UARTE_INSTANCE(0),
-                              EVENT_INITIAL_VALUE(uarte0.evt, false, 0),
-                              MUTEX_INITIAL_VALUE(uarte0.lock),
-                              0
-                            };
 
 void nrf52_UARTE0_UART0_IRQ(void) {
     arm_cm_irq_entry();
@@ -54,13 +60,7 @@ void nrf52_UARTE0_UART0_IRQ(void) {
 }
 #endif
 
-
 #if (NRFX_UARTE1_ENABLED)
-static uarte_dev_t uarte1 = { NRFX_UARTE_INSTANCE(1),
-                              EVENT_INITIAL_VALUE(uarte1.evt, false, 0),
-                              MUTEX_INITIAL_VALUE(uarte1.lock),
-                              0
-                            };
 
 void nrf52_UARTE1_IRQ(void) {
     arm_cm_irq_entry();
@@ -69,18 +69,22 @@ void nrf52_UARTE1_IRQ(void) {
 }
 #endif
 
-static inline uarte_dev_t *get_nrfx_uarte(int instance) {
+static inline status_t nrfx_uarte_init_instance(nrfx_uarte_t *uarte, int instance) {
     switch (instance) {
 #if (NRFX_UARTE0_ENABLED)
         case 0:
-            return &uarte0;
+            uarte->p_reg = NRF_UARTE0;
+            uarte->drv_inst_idx = NRFX_UARTE0_INST_IDX;
+            return NO_ERROR;
 #endif
 #if (NRFX_UARTE1_ENABLED)
         case 1:
-            return &uarte1;
+            uarte->p_reg = NRF_UARTE1;
+            uarte->drv_inst_idx = NRFX_UARTE1_INST_IDX;
+            return NO_ERROR;
 #endif
         default:
-            return NULL;
+            return -1;
     }
 }
 
@@ -92,30 +96,26 @@ void uarte_evt_handler(nrfx_uarte_event_t const *p_event,void *p_context) {
 
 void uarte_init_early(void) {}
 
-void uarte_init(void) {
+status_t uarte_init(uarte_dev_t *uarte, int instance, int tx_pin, int rx_pin) {
+    ASSERT(uarte);
     nrfx_err_t status;
+    if (nrfx_uarte_init_instance(&uarte->uarte, instance) != NO_ERROR) {
+      return ERR_NOT_FOUND;
+    }
+    event_init(&uarte->evt, false, 0);
+    mutex_init(&uarte->lock);
+    cbuf_initialize(&uarte->tx_buf, NRFX_UARTE_TX_BUFF_SIZE);
+    cbuf_initialize(&uarte->rx_buf, NRFX_UARTE_RX_BUFF_SIZE);
 
-#if (NRFX_UARTE0_ENABLED)
-    //Pins should be defined in target/gpioconfig.h
-    nrfx_uarte_config_t uarte0_config = NRFX_UARTE_DEFAULT_CONFIG(UARTE0_TX_PIN, UARTE0_RX_PIN);
-    uarte0_config.p_context = &uarte0;
+    nrfx_uarte_config_t uarte_config = NRFX_UARTE_DEFAULT_CONFIG(tx_pin, rx_pin);
+    uarte_config.p_context = uarte;
 
-    status = nrfx_uarte_init(&uarte0.uarte, &uarte0_config, uarte_evt_handler);
+    status = nrfx_uarte_init(&uarte->uarte, &uarte_config, uarte_evt_handler);
     if (status != NRFX_SUCCESS) {
         NRFX_LOG_ERROR("ERROR in uarte0 init:%s \n",NRFX_LOG_ERROR_STRING_GET(status));
+        return (status_t) status;
     }
-#endif
-
-#if (NRFX_UARTE1_ENABLED)
-    //Pins should be defined in target/gpioconfig.h
-    nrfx_uarte_config_t uarte1_config = NRFX_UARTE_DEFAULT_CONFIG(UARTE1_TX_PIN, UARTE1_RX_PIN);
-    uarte1_config.p_context = &uarte1;
-
-    status = nrfx_uarte_init(&uarte1.uarte, &uarte1_config, uarte_evt_handler);
-    if (status != NRFX_SUCCESS) {
-        NRFX_LOG_ERROR("ERROR in uarte1 init:%s \n",NRFX_LOG_ERROR_STRING_GET(status));
-    }
-#endif
+    return NO_ERROR;
 }
 
 
