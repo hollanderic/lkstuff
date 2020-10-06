@@ -8,6 +8,7 @@
 #pragma once
 
 #include <nrfx.h>
+#include <sys/types.h>
 
 void nrf52_debug_early_init(void);
 void nrf52_debug_init(void);

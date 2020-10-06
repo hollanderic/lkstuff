@@ -37,23 +37,29 @@ GLOBAL_DEFINES += \
 	MEMSIZE=$(MEMSIZE)
 
 # Other important defines
-#GLOBAL_DEFINES += \
+GLOBAL_DEFINES += \
+	NRFX_CLOCK_ENABLED=1 \
+
 #	NRFX_ENABLE_LOGGING=1 \
 
 MODULE_SRCS += \
+	$(LOCAL_DIR)/clock.c \
 	$(LOCAL_DIR)/i2c_master.c \
 	$(LOCAL_DIR)/init.c \
 	$(LOCAL_DIR)/debug.c \
 	$(LOCAL_DIR)/uart.c \
 	$(LOCAL_DIR)/vectab.c \
 	$(LOCAL_DIR)/gpio.c \
-	$(LOCAL_DIR)/timer.c \
+
+
+#	$(LOCAL_DIR)/timer.c \
 
 LINKER_SCRIPT += \
 	$(BUILDDIR)/system-twosegment.ld
 
 MODULE_DEPS += \
 	platform/nrfx \
+	arch/arm/arm-m/systick \
 	lib/cbuf
 
 include make/module.mk
