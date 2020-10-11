@@ -20,7 +20,8 @@ typedef enum {
 
 typedef struct {
   nrfx_rtc_t *dev;
-
+  void *cbs[4];
+  void *cb_args[4];
 } lk_rtc_dev_t;
 
 
