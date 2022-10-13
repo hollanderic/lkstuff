@@ -12,10 +12,24 @@
 #include <dev/gpio.h>
 #include <platform/init.h>
 #include <target/gpioconfig.h>
+#include <app/trinamic.h>
+
+
+tmc_config_t tmc_pin_configs = {0,1,2,3};
 
 static void target_gpio_init(void) {
     gpio_config(GPIO_LED1, GPIO_OUTPUT);
     gpio_config(GPIO_LED2, GPIO_OUTPUT); 
+
+    // Configure motor driver enable signal and de-assert
+    gpio_config(MOTOR_ENn, GPIO_OUTPUT);
+    gpio_set(MOTOR_ENn, 1);
+
+    gpio_config(CS1n, GPIO_OUTPUT);
+    gpio_set(CS1n, 1);
+
+    gpio_config(TMCCLK, GPIO_OUTPUT);
+    gpio_set(TMCCLK, 0);
 }
 
 void target_early_init(void) {

@@ -40,6 +40,10 @@ typedef struct twim_dev {
 } twim_dev_t;
 
 #if (NRFX_TWIM0_ENABLED)
+#if (NRFX_SPIM0_ENABLED || NRFX_SPIS0_ENABLED || NRFX_TWIS0_ENABLED || NRFX_SPI0_ENABLED || NRFX_TWI0_ENABLED)
+#error "NRFX_TWIM0 can't be used with SPIM0, SPIS0, TWIS0, SPI0, or TWI0"
+#endif
+
 static twim_dev_t twim0 = { NRFX_TWIM_INSTANCE(0),
                             EVENT_INITIAL_VALUE(twim0.evt, false, 0),
                             MUTEX_INITIAL_VALUE(twim0.lock),
@@ -54,6 +58,10 @@ void nrf52_SPIM0_SPIS0_TWIM0_TWIS0_SPI0_TWI0_IRQ(void) {
 #endif
 
 #if (NRFX_TWIM1_ENABLED)
+#if (NRFX_SPIM1_ENABLED || NRFX_SPIS1_ENABLED || NRFX_TWIS1_ENABLED || NRFX_SPI1_ENABLED || NRFX_TWI1_ENABLED)
+#error "NRFX_TWIM1 can't be used with SPIM1, SPIS1, TWIS1, SPI1, or TWI1"
+#endif
+
 static twim_dev_t twim1 = { NRFX_TWIM_INSTANCE(1),
                             EVENT_INITIAL_VALUE(twim1.evt, false, 0),
                             MUTEX_INITIAL_VALUE(twim1.lock),
@@ -91,30 +99,42 @@ void i2c_twim_evt_handler(nrfx_twim_evt_t const *p_event,void *p_context) {
 void i2c_init_early(void) {}
 
 void i2c_init() {
-    nrfx_err_t status;
 
 #if (NRFX_TWIM0_ENABLED)
-    //Pins should be defined in target/gpioconfig.h
-    const nrfx_twim_config_t twim0_config = NRFX_TWIM_DEFAULT_CONFIG(TWIM0_SCL_PIN, TWIM0_SDA_PIN);
+#if defined(TWIM0_SCL_PIN) && defined(TWIM0_SDA_PIN)
+    {
+        nrfx_err_t status = 0;
+        //Pins should be defined in target/gpioconfig.h
+        const nrfx_twim_config_t twim0_config = NRFX_TWIM_DEFAULT_CONFIG(TWIM0_SCL_PIN, TWIM0_SDA_PIN);
 
-    status = nrfx_twim_init(&twim0.twim, &twim0_config, i2c_twim_evt_handler, &twim0);
-    if (status == NRFX_SUCCESS) {
-        nrfx_twim_enable(&twim0.twim);
-    } else {
-        NRFX_LOG_ERROR("ERROR in twim0 init:%s \n",NRFX_LOG_ERROR_STRING_GET(status));
+        status = nrfx_twim_init(&twim0.twim, &twim0_config, i2c_twim_evt_handler, &twim0);
+        if (status == NRFX_SUCCESS) {
+            nrfx_twim_enable(&twim0.twim);
+        } else {
+            NRFX_LOG_ERROR("ERROR in twim0 init:%s \n",NRFX_LOG_ERROR_STRING_GET(status));
+        }
     }
+#else
+#error "TWIM0_SCL_PIN and/or TWIM0_SDA_PIN are not defined for TWIM0 driver"
+#endif
 #endif
 
 #if (NRFX_TWIM1_ENABLED)
-    //Pins should be defined in target/gpioconfig.h
-    const nrfx_twim_config_t twim1_config = NRFX_TWIM_DEFAULT_CONFIG(TWIM1_SCL_PIN, TWIM1_SDA_PIN);
-
-    status = nrfx_twim_init(&twim1, &twim1_config, i2c_twim_evt_handler, &twim1);
-    if (status == NRFX_SUCCESS) {
-        nrfx_twim_enable(&twim1);
-    } else {
-        NRFX_LOG_ERROR("ERROR in twim1 init:%s \n",NRFX_LOG_ERROR_STRING_GET(status));
+#if defined(TWIM1_SCL_PIN) && defined(TWIM1_SDA_PIN)
+    {
+        nrfx_err_t status = 0;
+        //Pins should be defined in target/gpioconfig.h
+        const nrfx_twim_config_t twim1_config = NRFX_TWIM_DEFAULT_CONFIG(TWIM1_SCL_PIN, TWIM1_SDA_PIN);
+        status = nrfx_twim_init(&twim1.twim, &twim1_config, i2c_twim_evt_handler, &twim1);
+        if (status == NRFX_SUCCESS) {
+            nrfx_twim_enable(&twim1.twim);
+        } else {
+            NRFX_LOG_ERROR("ERROR in twim1 init:%s \n",NRFX_LOG_ERROR_STRING_GET(status));
+        }
     }
+#else
+#error "TWIM1_SCL_PIN and/or TWIM1_SDA_PIN are not defined for TWIM1 driver"
+#endif
 #endif
 }
 

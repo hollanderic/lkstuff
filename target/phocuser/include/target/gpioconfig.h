@@ -32,6 +32,11 @@
 // Motor control signals
 #define STEP NRF52_GPIO(0, 4)
 #define DIR  NRF52_GPIO(0, 5)
+#define MOTOR_ENn NRF52_GPIO(0, 21)
+#define DIAG0 NRF52_GPIO(0, 12)
+#define DIAG1 NRF52_GPIO(0, 23)
+
+#define TMCCLK NRF52_GPIO(0, 2)
 
 // Thermistor
 #define THERMO NRF52_GPIO(1, 13)
