@@ -4,6 +4,7 @@ MODULE := $(LOCAL_DIR)
 
 MODULE_SRCS := \
 	$(LOCAL_DIR)/drivers/src/nrfx_clock.c \
+	$(LOCAL_DIR)/drivers/src/nrfx_spim.c \
 	$(LOCAL_DIR)/drivers/src/nrfx_twi.c \
 	$(LOCAL_DIR)/drivers/src/nrfx_twi_twim.c \
 	$(LOCAL_DIR)/drivers/src/nrfx_twim.c \

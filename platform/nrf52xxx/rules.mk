@@ -50,6 +50,7 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/uart.c \
 	$(LOCAL_DIR)/vectab.c \
 	$(LOCAL_DIR)/gpio.c \
+	$(LOCAL_DIR)/spi_master.c \
 	$(LOCAL_DIR)/timer.c \
 
 LINKER_SCRIPT += \

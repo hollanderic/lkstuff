@@ -11,6 +11,7 @@
 #include <lk/compiler.h>
 #include <dev/gpio.h>
 #include <platform/init.h>
+#include <platform/spim.h>
 #include <target/gpioconfig.h>
 #include <app/trinamic.h>
 
@@ -42,6 +43,8 @@ void target_early_init(void) {
 
 void target_init(void) {
     nrf52_debug_init();
+    nrfx_spim_config_t config;
+    spim_init(1, config);
     dprintf(SPEW,"Target: Phocuser...\n");
 }
 

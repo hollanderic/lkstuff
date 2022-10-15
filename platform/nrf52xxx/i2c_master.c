@@ -10,7 +10,7 @@
 /*
   To use the twim driver, NRFX_TWIM_ENABLED must be set to 1 in the GLOBAL_DEFINES
   additionally, NRFX_TWIM0_ENABLED and/or NRFX_TWIM1_ENABLED must also be 1 to specify
-  which modules are active.  These would ideally be set in either a project rule.mk
+  which modules are active.  These would ideally be set in either a project *.mk
   or in a targets rules.mk.
 
   The pins to be used for each of the active TWIM modules should be defined as:
